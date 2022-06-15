@@ -1,8 +1,6 @@
 import ExploreTile from './ExploreTile.js';
 import { useState, useEffect } from 'react';
 import ReactPaginate from 'react-paginate';
-import { useSelector } from 'react-redux';
-import { selectFilter } from '../../features/parks/parksSlice.js';
 
 
 export default function ExploreTiles( { parks, itemsPerPage } ) {
@@ -17,7 +15,6 @@ export default function ExploreTiles( { parks, itemsPerPage } ) {
         if (parks && parks.length > 0) {
             // Fetch items from another resources.
             const endOffset = itemOffset + itemsPerPage;
-            console.log(`Loading items from ${itemOffset} to ${endOffset}`);
             setCurrentItems(parks.slice(itemOffset, endOffset));
             setPageCount(Math.ceil(parks.length / itemsPerPage));
         }

@@ -20,34 +20,13 @@ export default function Explore() {
         if (sessionStorage.getItem('fetchedParks')) {
             // If user has already visited 'Explore' page, get park data from session storage
             dispatch(setParks(JSON.parse(sessionStorage.getItem('fetchedParks'))));
-            console.log('Fetched from storage')
         } else {
             // If it's the first time the user is visiting, fetch park data from API
             if (parksStatus === 'idle') {
                 dispatch(fetchParks());
-                console.log('Called api')
             }
         }
     }, [parksStatus, dispatch])
-
-    // Add event listener for user to scroll to bottom of page
-    useEffect(() => {
-        window.addEventListener('scroll', loadNextParks, {
-          passive: true
-        });
-        return () => {
-          window.removeEventListener('scroll', loadNextParks);
-        };
-    }, []);
-
-
-    const loadNextParks = () => {
-        const bottom = Math.ceil(window.innerHeight + window.scrollY) >= document.documentElement.scrollHeight
-        if (bottom) {
-          console.log('at the bottom');
-        }
-    };
-
 
     if (view === 'list') {
         return (
