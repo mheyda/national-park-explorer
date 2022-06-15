@@ -15,7 +15,7 @@ export default function OptionsBar() {
 
     const filterSelectOptions = [
         {
-            title: 'All',
+            title: 'All Parks',
             value: 'All'
         },
         {
@@ -67,9 +67,11 @@ export default function OptionsBar() {
     if (view === 'list') {
         return (
             <div className='options-bar'>
-                <SearchBar />
-                <Select name={'Filter By'} options={filterSelectOptions} onChange={handleUpdateFilter} />
-                <Select name={'Sort By'} options={sortSelectOptions} onChange={handleUpdateSort} /> 
+                {// For future functionality
+                // <SearchBar />
+                }
+                <Select name={'Filter By '} options={filterSelectOptions} onChange={handleUpdateFilter} />
+                <Select name={'Sort By '} options={sortSelectOptions} onChange={handleUpdateSort} /> 
                 
                 <button className='view-btn' data-view={'map'} onClick={handleChangeView} >Show Map <i data-view={'map'} className="fa-solid fa-map"></i></button>
             </div>

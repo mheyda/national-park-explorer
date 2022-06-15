@@ -1,11 +1,14 @@
 .navbar-container {
     background-color: white;
     z-index: 1;
+    border-bottom: 5px solid #484848;
 }
 
 .navbar {
     background-size: cover;
     background-position: center;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
 }
 
 .nav-content {
@@ -15,14 +18,14 @@
 }
 
 .nav-logo {
-    width: 75px;
-    padding: 5px;
+    height: 75px;
+    padding-right: 10px;
 }
 
 .nav-title {
     text-align: right;
     font-size: 1.5rem;
-    color: #5c5c5c;
+    color: #484848;
 }   
 
 .nav-links {

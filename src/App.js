@@ -13,11 +13,19 @@ function App() {
     <BrowserRouter>
       <NavBar />
       <Routes>
+        {/* For future use when more nav buttons are needed
         <Route index element={<Home />} />
         <Route path='/' element={<Home />} />
         <Route path="explore" element={<Explore />} />
         <Route path="explore/:parkFullName/:parkCode" element={<Park />} />
-        <Route path={'my-parks'} element={<MyParks />} />
+        <Route path='my-parks' element={<MyParks />} />
+        <Route path="*" element={<NoMatch />} />
+      
+        */}
+        <Route index element={<Explore />} />
+        <Route path='/' element={<Explore />} />
+        <Route path=":parkFullName/:parkCode" element={<Park />} />
+        <Route path='my-parks' element={<MyParks />} />
         <Route path="*" element={<NoMatch />} />
       </Routes>
     </BrowserRouter>

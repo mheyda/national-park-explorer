@@ -1,10 +1,8 @@
 /* Map */
 .map-container { 
-    /* 150px is height of navbar... if that changes change this */
     position: absolute;
-    top: 150px;
     width: 100vw;
-    height: calc(100vh - 150px);
+    height: 100vh;
     z-index: 0;
 }
 

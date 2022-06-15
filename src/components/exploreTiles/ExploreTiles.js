@@ -44,11 +44,12 @@ export default function ExploreTiles( { parks, itemsPerPage } ) {
     
                 <ReactPaginate
                     breakLabel="..."
-                    nextLabel="Next >"
+                    nextLabel=">"
                     onPageChange={handlePageClick}
-                    pageRangeDisplayed={3}
+                    pageRangeDisplayed={1}
+                    marginPagesDisplayed={1}
                     pageCount={pageCount}
-                    previousLabel="< Previous"
+                    previousLabel="<"
                     renderOnZeroPageCount={null}
                     forcePage={currentPage}
                     containerClassName='page-nav-container'
@@ -62,7 +63,7 @@ export default function ExploreTiles( { parks, itemsPerPage } ) {
         );
     } else {
         return (
-            <>Something</>
+            <>Loading parks...</>
         );
     }
 

@@ -1,4 +1,5 @@
 import './Park.css';
+import { Link } from 'react-router-dom';
 import AutoSlideshow from '../../components/slideShows/AutoSlideshow.js';
 import WeatherCurrent from '../../features/weather/weatherCurrent/WeatherCurrent.js';
 import Weather7Day from '../../features/weather/weather7Day/Weather7Day.js';
@@ -11,6 +12,9 @@ export default function Park() {
 
     return (
         <main className='park-container'>
+            <Link to={'/'} >Back</Link>
+            <br></br>
+            <br></br>
             <div className='park'>
                 <div className='park-img-container'>
                     <div className='park-img'>

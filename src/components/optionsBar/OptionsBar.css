@@ -32,3 +32,11 @@
 .view-btn i {
     padding: 5px;
 }
+
+.options-bar .select-container {
+    padding-bottom: 0.5rem;    
+}
+
+.options-bar select {
+    width: 100%;
+}

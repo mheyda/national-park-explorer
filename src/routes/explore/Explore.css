@@ -1,6 +1,7 @@
 /* Explore Container */
 .explore {
     width: 100%;
+    padding-top: 1rem;
     padding-bottom: 12vh;
 }
 
@@ -8,12 +9,12 @@
 .page-nav-container {
     display: flex;
     justify-content: center;
-    padding: 1rem 0;
+    padding: 2rem 0;
 }
 
 .page-nav-button, .page-nav-container .break, .page-nav-previous, .page-nav-next {
     border: 1px solid lightgray;
-    padding: 0.5rem 1rem;
+    padding: 0.25rem 0.75rem;
     cursor: pointer;
 }
 
