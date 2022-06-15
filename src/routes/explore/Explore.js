@@ -18,6 +18,8 @@ export default function Explore() {
     // Get park data
     useEffect(() => {
         if (sessionStorage.getItem('fetchedParks')) {
+            alert('Pulling data from session storage')
+
             // If user has already visited 'Explore' page, get park data from session storage
             dispatch(setParks(JSON.parse(sessionStorage.getItem('fetchedParks'))));
         } else {

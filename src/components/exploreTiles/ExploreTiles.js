@@ -13,10 +13,10 @@ export default function ExploreTiles( { parks, itemsPerPage } ) {
 
     useEffect(() => {
         if (parks && parks.length > 0) {
-            // Fetch items from another resources.
             const endOffset = itemOffset + itemsPerPage;
             setCurrentItems(parks.slice(itemOffset, endOffset));
             setPageCount(Math.ceil(parks.length / itemsPerPage));
+            alert('Parks exist in app -> items have been set')
         }
     }, [itemOffset, itemsPerPage, parks]);
 

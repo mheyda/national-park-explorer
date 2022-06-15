@@ -64,7 +64,6 @@ export const parksSlice = createSlice({
         state.allParks = action.payload;
         state.filteredParks = action.payload;
         sessionStorage.setItem('fetchedParks', JSON.stringify(action.payload));
-        alert('sessionStorage set')
       })
       .addCase(fetchParks.rejected, (state, action) => {
         state.status = 'failed';
