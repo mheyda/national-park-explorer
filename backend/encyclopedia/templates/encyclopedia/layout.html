@@ -1,0 +1,72 @@
+{% load static %}
+
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+        <title>{% block title %}{% endblock %}</title>
+        
+        <!-- Meta Tags -->
+        <meta charset="UTF-8">
+        <meta name="description" content="Wiki Demo">
+        <meta name="keywords" content="HTML, CSS, JavaScript, Django, Java, git, Python, Go, PHP, R, SwiftUI, CS50w">
+        <meta name="author" content="Marshall Heyda">
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+        <meta name="title" property="og:title" content="Wiki Application" />
+        <meta property="og:type" content="Website" />
+        <meta name="image" property="og:image" content="https://i.ibb.co/FX5Lfvn/Wiki-Cover-Photo.jpg" />
+
+        <!-- Bootstrap -->
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+        
+        <!-- Browser Icon -->
+        <link rel="icon" href="/static/encyclopedia/favicon.ico">
+
+        <!-- CSS Stylesheet -->
+        <link href="{% static 'encyclopedia/styles.css' %}" rel="stylesheet">
+        
+        <!-- Font Awesome Icons -->
+        <script src="https://kit.fontawesome.com/a7e713de55.js" crossorigin="anonymous"></script>
+    </head>
+    <body>
+        <div class="row">
+            <div class="sidebar col-lg-3 col-md-4">
+                <a class="home" href="{% url 'index' %}"><h1><i class="fas fa-igloo"></i> Wiki</h1></a>
+                <form action="{% url 'search' %}" method="POST">
+                    {% csrf_token %}
+                    <div class="search">{{ search_form }}</div> 
+                    <input type="submit" value="Search">
+                </form>
+                <div>
+                    <a href="{% url 'create' %}">Create New Page</a>
+                </div>
+                <div>
+                    <a href="{% url 'random' %}">Random Page</a>
+                </div>
+                {% block nav %}
+                {% endblock %}
+            </div>
+            <div class="main col-lg-9 col-md-8">
+                {% block body %}
+                {% endblock %}
+            </div>
+        </div>
+        <script>
+            function not_authorized() {
+                alert("Sorry, you are not authorized to do that.");
+            }
+            function for_approval() {
+                alert("Your changes have been sent for approval.");
+            }
+        </script>
+    </body>
+    <footer>
+        ©
+        <script>
+            var year = new Date().getFullYear()
+            document.write(year)
+        </script>
+        Marshall Heyda
+    </footer>
+</html>

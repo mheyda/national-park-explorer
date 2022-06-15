@@ -1,0 +1,14 @@
+{% extends "encyclopedia/layout.html" %}
+
+{% block title %}
+    Create | Wiki
+{% endblock %}
+
+{% block body %}
+    <h1>Create New Page</h1>    
+    <p>Title </br>{{ form.title }}</br></br>
+    Markdown Content </br> {{ form.markdown_content }}</p>
+    <form action="{% url 'index' %}" method="GET">
+        <input onclick="for_approval()" type="submit" value="Save">
+    </form>
+{% endblock %}

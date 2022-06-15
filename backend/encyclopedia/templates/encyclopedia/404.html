@@ -1,0 +1,20 @@
+{% load static %}
+
+<!DOCTYPE html>
+
+<html lang="en">
+    <head>
+        <title>404 Not Found | Wiki</title>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+        <link href="{% static 'encyclopedia/styles.css' %}" rel="stylesheet">
+        <!-- Font Awesome Icons -->
+        <script src="https://kit.fontawesome.com/a7e713de55.js" crossorigin="anonymous"></script>
+    </head>
+    <body>
+        <div class="main" style="text-align: center; padding-top: 10vh;">
+            <p><a class="home" href="{% url 'index' %}"><h1><i class="fas fa-igloo"></i> Wiki</h1></a></p>
+            <p><b>404!</b> The URL you requested does not exist.</p>
+            <input onclick="history.back()" type="submit" value="Go Back">
+        </div>
+    </body>
+</html>
