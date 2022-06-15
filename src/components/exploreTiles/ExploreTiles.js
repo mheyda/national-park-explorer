@@ -16,7 +16,6 @@ export default function ExploreTiles( { parks, itemsPerPage } ) {
             const endOffset = itemOffset + itemsPerPage;
             setCurrentItems(parks.slice(itemOffset, endOffset));
             setPageCount(Math.ceil(parks.length / itemsPerPage));
-            alert('Parks exist in app -> items have been set')
         }
     }, [itemOffset, itemsPerPage, parks]);
 

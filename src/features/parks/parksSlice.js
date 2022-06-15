@@ -2,11 +2,9 @@ import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 
 
 export const fetchParks = createAsyncThunk('parks/fetchParks', async () => {
-  alert('Attempting to fetch data')
   const response = await fetch("https://national-park-explorer-server2.herokuapp.com/getParks");
   const json = await response.json();
   const data = await json.data;
-  alert('Fetched data properly')
   return data;
 })
 
@@ -58,13 +56,11 @@ export const parksSlice = createSlice({
         state.status = 'loading';
       })
       .addCase(fetchParks.fulfilled, (state, action) => {
-        alert('Status is succeeded')
-        state.status = 'succeeded'
-        // Add fetched parks to state and save to session storage for usage
-        state.allParks = action.payload;
-        state.filteredParks = action.payload;
         try {
-          sessionStorage.setItem('fetchedParks', JSON.stringify(action.payload));
+          state.status = 'succeeded'
+          // Add fetched parks to state
+          state.allParks = action.payload;
+          state.filteredParks = action.payload;
         } catch(e) {
           alert("Error: " + e);
         }
