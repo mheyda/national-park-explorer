@@ -63,7 +63,11 @@ export const parksSlice = createSlice({
         // Add fetched parks to state and save to session storage for usage
         state.allParks = action.payload;
         state.filteredParks = action.payload;
-        sessionStorage.setItem('fetchedParks', JSON.stringify(action.payload));
+        try {
+          sessionStorage.setItem('fetchedParks', JSON.stringify(action.payload));
+        } catch(e) {
+          alert("Error: " + e);
+        }
       })
       .addCase(fetchParks.rejected, (state, action) => {
         state.status = 'failed';
