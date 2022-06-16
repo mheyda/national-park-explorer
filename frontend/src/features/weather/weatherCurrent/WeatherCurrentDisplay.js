@@ -28,10 +28,12 @@ export default function WeatherCurrentDisplay( { weather } ) {
     return (
         <div className='weather-current-container'>
             <h3>Currently</h3>
-            <img className='weather-current-icon' src={`http://openweathermap.org/img/wn/${icon}@2x.png`} alt={altText} />
-            <p className='weather-current-temp-main'>{temp.current}&deg;{tempFormat}</p>
-            <p>{description}</p>
-            <p>H: {temp.high}&deg;{tempFormat} | L: {temp.low}&deg;{tempFormat}</p>
+            <div className='weather-current-content'>
+                <img className='weather-current-icon' src={`http://openweathermap.org/img/wn/${icon}@2x.png`} alt={altText} />
+                <p className='weather-current-temp-main'>{temp.current}&deg;{tempFormat}</p>
+                <p>{description}</p>
+                <p>H: {temp.high}&deg;{tempFormat} | L: {temp.low}&deg;{tempFormat}</p>
+            </div>
         </div>
     );
 }

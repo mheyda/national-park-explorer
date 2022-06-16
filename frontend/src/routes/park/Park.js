@@ -23,15 +23,15 @@ export default function Park() {
                 </div>
                 <div>
                     <section className='park-section'>
-                        <h1>{park.fullName}</h1>
+                        <h2>{park.fullName}</h2>
                         <p>{park.addresses[0].city}, {park.addresses[0].stateCode}</p>
                     </section>
                     <section className='park-section'>
-                        <h2>Overview</h2>
+                        <h3>Overview</h3>
                         <p>{park.description}</p>
                     </section>
                     <section className='park-section'>
-                        <h2>Tickets & Fees</h2>
+                        <h3>Tickets & Fees</h3>
                         <ul>
                             {park.entranceFees.map((fee, index) => {
                                 let { title, cost } = fee;
@@ -52,7 +52,7 @@ export default function Park() {
                 </div>
             </div>
             <section className='park-section'>
-                <h2>Weather <WeatherFormatToggler /></h2>
+                <h3>Weather <WeatherFormatToggler /></h3>
                 <div className='park-weather'>
                     <WeatherCurrent lat={park.latitude} lng={park.longitude} />
                     <Weather7Day lat={park.latitude} lng={park.longitude} />

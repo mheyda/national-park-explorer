@@ -7,7 +7,9 @@
 .park-img-container {
   height: 75vw;
   border-radius: 15px;
+  -webkit-border-radius: 15px;
   overflow: hidden;
+  margin-bottom: 1rem;
 }
 
 .park-img {
@@ -29,7 +31,7 @@
 
 @media (min-width: 576px) {
   .park-weather {
-    grid-template-columns: minmax(30%, 1fr) minmax(70%, 1fr);
+    grid-template-columns: minmax(40%, 1fr) minmax(60%, 1fr);
   }
   .weather-current-container {
     border-right: 2px solid black;
@@ -43,7 +45,7 @@
 
 @media (min-width: 992px) {
   .park {
-    grid-template-columns: minmax(55%, 1fr) minmax(0, 1fr);
+    grid-template-columns: minmax(50%, 1fr) minmax(0, 1fr);
     grid-gap: 2rem;
     padding-bottom: 2rem;
   }

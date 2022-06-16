@@ -11,12 +11,8 @@ export default function ExploreTile( { park } ) {
         states = states.split(',').slice(0, 3).join(', ') + ', & More'
     }
 
-    const saveCurrentPark = () => {
-        sessionStorage.setItem('currentPark', JSON.stringify(park));
-    }
-
     return (
-        <Link to={`${park.fullName}/${park.parkCode}`} onClick={saveCurrentPark}>
+        <Link to={`${park.fullName}/${park.parkCode}`} onClick={() => sessionStorage.setItem('currentPark', JSON.stringify(park))}>
             <li className='explore-tile' id={park.fullName}>
                 <div className='explore-tile-img-container'>
                     <div className='explore-tile-img'>

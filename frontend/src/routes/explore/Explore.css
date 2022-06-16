@@ -67,12 +67,14 @@
 
 .explore-tile-img {
     object-fit: cover;
+    -webkit-border-radius: 5%;
     border-radius: 5%;
     overflow: hidden
 }
 
 
 .explore-tile-content {
+    font-size: 0.8rem;
     padding-top: 0.5rem;
     display: grid;
     grid-template-columns: 75% 25%;

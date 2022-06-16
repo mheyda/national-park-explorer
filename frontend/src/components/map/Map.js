@@ -21,7 +21,7 @@ export default function Map( { parks }) {
                 }
                 
                 return <Marker key={index} position={[park.latitude, park.longitude]} >
-                            <Link to={`${park.fullName}/${park.parkCode}`}>
+                            <Link to={`${park.fullName}/${park.parkCode}`} onClick={() => sessionStorage.setItem('currentPark', JSON.stringify(park))}>
                                 <Popup className='popup-container' >
                                     <div className='popup-img-container'>
                                         <ManualSlideshow images={park.images} />

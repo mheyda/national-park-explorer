@@ -1,4 +1,5 @@
 .select-container select {
+    color: black;
     height: 2rem;
     padding-left: 0.5rem;
     background: url('../../assets/images/chevron-down-solid.svg') no-repeat right 0.5rem center;

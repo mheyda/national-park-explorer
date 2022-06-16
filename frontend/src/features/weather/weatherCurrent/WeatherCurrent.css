@@ -7,11 +7,17 @@
     margin-bottom: -24px;
 }
 
-.weather-current-container i {
-    font-size: 40px;
-}
-
 .weather-current-temp-main {
     font-size: 26px;
     font-weight: 600;
+}
+
+@media (min-width: 576px) {
+    .weather-current-content {
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        position: absolute;
+        width: 100%;
+    }
 }
