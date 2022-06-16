@@ -27,12 +27,12 @@ export default function Weather7weatherItem( { weather, dayOfTheWeek } ) {
 
     return (
         <li className='weather-7day-item'>
-            <p>{weekday[dayOfTheWeek]}</p>
+            <p className='weather-7day-day'>{weekday[dayOfTheWeek]}</p>
             <div>
                 <img className='weather-7day-icon' src={`http://openweathermap.org/img/wn/${icon}@2x.png`} alt={altText} />
                 <p>{description}</p>
             </div>
-            <p>
+            <p className='weather-7day-temps'>
                 H: {temp.high}&deg;{tempFormat}
                 <br></br>
                 L: {temp.low}&deg;{tempFormat}

@@ -6,14 +6,15 @@
 
 .park-img-container {
   height: 75vw;
-  border-radius: 15px;
-  -webkit-border-radius: 15px;
-  overflow: hidden;
   margin-bottom: 1rem;
 }
 
 .park-img {
   height: 100%;
+  -webkit-border-radius: 15px;
+  border-radius: 15px;
+  overflow: hidden;
+  isolation: isolate;
 }
 
 .park-section {
