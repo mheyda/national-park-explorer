@@ -9,9 +9,13 @@ from rest_framework import status
 # Create your views here.
 # Render home page
 def index(request):
-    return render(request, "api/index.html", {
-        
-    })
+    return render(request, "index.html")
+
+def handler404(request,exception):
+    return render(request, '404.html', status=404)
+
+def handler500(request,exception):
+    return render(request, '500.html', status=500)
 
 @api_view(['GET'])
 def getWeather(request):
@@ -24,12 +28,5 @@ def getWeather(request):
 @api_view(['GET'])
 def getParks(request):
     if request.method == 'GET':
-        
         parks = requests.get(f'https://developer.nps.gov/api/v1/parks?limit=500&api_key={settings.NPS_API_KEY}').json()
-
-        parks["Access-Control-Allow-Origin"] = "*"
-        parks["Access-Control-Allow-Methods"] = "GET, OPTIONS"
-        parks["Access-Control-Max-Age"] = "1000"
-        parks["Access-Control-Allow-Headers"] = "X-Requested-With, Content-Type"
-
         return Response(parks)
