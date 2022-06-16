@@ -1,8 +1,9 @@
 /* Map */
 .map-container { 
-    position: absolute;
+    position: relative;
     width: 100vw;
-    height: 100vh;
+    /* If navbar height changes, change this */
+    height: calc(100vh - 96px);
     z-index: 0;
 }
 

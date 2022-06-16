@@ -2,6 +2,11 @@
     background-color: white;
     z-index: 1;
     border-bottom: 5px solid #484848;
+    position: -webkit-sticky;
+	position: sticky;
+	top: 0;
+    /* If height changes, change map height as well */
+    height: 96px;
 }
 
 .navbar {

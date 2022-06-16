@@ -8,7 +8,9 @@ export default function NavBar() {
         <nav className='navbar-container'>
             <div className='navbar'>
                 <div className='nav-content'>
-                    <img className='nav-logo' src={require('../../assets/images/nps-logo.png')} alt={'National Park Service Logo'} />
+                    <Link to={'/'}>
+                        <img className='nav-logo' src={require('../../assets/images/nps-logo.png')} alt={'National Park Service Logo'} />
+                    </Link>
                     <h1 className='nav-title'>National Park Explorer</h1>
                 </div>
                 {
