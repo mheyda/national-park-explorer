@@ -35,13 +35,13 @@ NPS_API_KEY = env.str('NPS_API_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['localhost', 'national-park-explorer-server.herokuapp.com']
+ALLOWED_HOSTS = ['localhost', 'mheyda-server.herokuapp.com']
 
 
 # Application definition
 
 INSTALLED_APPS = [
-    'api',
+    'national_park_explorer',
     'rest_framework',
     "corsheaders",
     'django.contrib.admin',
@@ -68,7 +68,7 @@ MIDDLEWARE = [
 
 CORS_ALLOW_ALL_ORIGINS = True
 
-ROOT_URLCONF = 'wiki.urls'
+ROOT_URLCONF = 'server.urls'
 
 TEMPLATES = [
     {
@@ -86,7 +86,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'wiki.wsgi.application'
+WSGI_APPLICATION = 'server.wsgi.application'
 
 
 # Database
