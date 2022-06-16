@@ -3,7 +3,7 @@ import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 
 export const fetchWeather = createAsyncThunk('weather/fetchWeather', async (coordinates) => {
     const { lat, lng } = coordinates;
-    const response = await fetch(`https://national-park-explorer-server2.herokuapp.com/getWeather/?lat=${lat}&lng=${lng}`);
+    const response = await fetch(`https://mheyda-server.herokuapp.com/getWeather/?lat=${lat}&lng=${lng}`);
     const json = await response.json();
     return json;
 })

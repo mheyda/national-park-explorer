@@ -2,7 +2,7 @@ import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 
 
 export const fetchParks = createAsyncThunk('parks/fetchParks', async () => {
-  const response = await fetch("https://national-park-explorer-server2.herokuapp.com/getParks");
+  const response = await fetch("https://mheyda-server.herokuapp.com/getParks");
   const json = await response.json();
   const data = await json.data;
   return data;
