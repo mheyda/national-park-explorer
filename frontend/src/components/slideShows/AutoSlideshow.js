@@ -7,7 +7,7 @@ export default function AutoSlideshow( { images } ) {
     const [imgIndex, setImgIndex] = useState(0);
     const [dotsStyling, setDotsStyling] = useState({ transform: 'translateX(0px)', transition: '0.8s' })
     const timeoutRef = useRef(null);
-    const delay = 3000;
+    const delay = 4000;
 
 
     function resetTimeout() {

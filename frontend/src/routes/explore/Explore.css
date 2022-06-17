@@ -14,8 +14,15 @@
 
 .page-nav-button, .page-nav-container .break, .page-nav-previous, .page-nav-next {
     border: 1px solid lightgray;
-    padding: 0.25rem 0.75rem;
     cursor: pointer;
+}
+
+.page-nav-container a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 2rem;
+    width: 2rem;
 }
 
 .page-nav-button:hover, .page-nav-container .break:hover, .page-nav-previous:hover, .page-nav-next:hover {
