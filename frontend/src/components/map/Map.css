@@ -11,6 +11,9 @@
     background: none;
     padding: 0;
     height: 100%;
+    -webkit-border-radius: 10px;
+    border-radius: 10px;
+    overflow: hidden;
 }
 
 .leaflet-popup-content {
@@ -42,6 +45,7 @@
     height: 200px;
     width: 100%;
     background-color: #dedede;
+    overflow: hidden;
 }
 
 .popup-content {
