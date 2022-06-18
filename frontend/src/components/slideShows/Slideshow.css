@@ -2,6 +2,7 @@
     overflow: hidden;
     position: relative;
     height: 100%;
+    width: 100%;
 }
 
 .slides {
@@ -13,7 +14,6 @@
 }
   
 .slide {
-    object-fit: cover;
     scroll-snap-align: start;
     flex-shrink: 0;
     width: 100%;

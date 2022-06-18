@@ -27,6 +27,7 @@ export default function ExploreTiles( { parks, itemsPerPage } ) {
         // Push to sessionStorage so user will return to page they were on
         sessionStorage.setItem('exploreListCurrentPage', event.selected);
         sessionStorage.setItem('exploreListCurrentOffset', newOffset);
+
     }
 
     if (currentItems && currentItems.length > 0) {
