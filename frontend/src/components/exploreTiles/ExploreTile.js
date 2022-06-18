@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import ManualSlideshow from '../slideShows/ManualSlideshow';
 
 
@@ -10,7 +10,7 @@ export default function ExploreTile( { park } ) {
     const statesLength = park.states.split(',').length;
 
     if (statesLength > 2) {
-        states = states.split(',').slice(0, 3).join(', ') + ', & More'
+            states = states.split(',').slice(0, 3).join(', ') + ', & More'
     }
 
     if (firstImgLoaded) {
@@ -36,7 +36,7 @@ export default function ExploreTile( { park } ) {
                     <div className='explore-tile-img'>
                         {// put placeholder image here }
                         }
-                        <img src={park.images[0].url} onLoad={setFirstImgLoaded((prev) => !prev)} style={{display: 'hidden'}} />
+                        <img src={park.images[0].url} onLoad={() => setFirstImgLoaded(true)} style={{display: 'hidden'}} />
                     </div>
                 </div>
                 <div className='explore-tile-content'>
