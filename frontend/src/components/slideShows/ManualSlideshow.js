@@ -30,7 +30,6 @@ export default function ManualSlideshow( { images } ) {
             </div>
             <div className="slides" >
                 {images.map((image, index) => (                    
-                    //<img className='slide' key={index} src={image.url} alt={image.altText} style={{ transform: `translateX(${-imgIndex * 100}%)`, transition: '0.8s' }} loading='lazy' />
                     <Image className='slide' root={root.current} key={index} src={image.url} alt={image.altText} style={{ transform: `translateX(${-imgIndex * 100}%)`, transition: '0.8s' }} loading='lazy' />
             ))}
             </div>
