@@ -3,8 +3,9 @@ import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 
 export const fetchIntervalParks = createAsyncThunk('parks/fetchIntervalParks', async (options) => {
   const { start, limit, sort, stateCode } = options;
-  //const response = await fetch(`https://mheyda-server.herokuapp.com/getParks?start=${start}&limit=${limit}&sort=${sort}&stateCode=${stateCode}`);
-  const response = await fetch(`http://127.0.0.1:8000/getParks?start=${start}&limit=${limit}&sort=${sort}&stateCode=${stateCode}`);
+  const response = await fetch(`https://mheyda-server.herokuapp.com/getParks?start=${start}&limit=${limit}&sort=${sort}&stateCode=${stateCode}`);
+  // For development
+  //const response = await fetch(`http://127.0.0.1:8000/getParks?start=${start}&limit=${limit}&sort=${sort}&stateCode=${stateCode}`);
   const json = await response.json();
   const data = await json.data;
   return data;
@@ -12,8 +13,9 @@ export const fetchIntervalParks = createAsyncThunk('parks/fetchIntervalParks', a
 
 export const fetchAllParks = createAsyncThunk('parks/fetchAllParks', async (options) => {
   const { stateCode } = options;
-  //const response = await fetch("https://mheyda-server.herokuapp.com/getParks?start=10&limit=2&sort=fullName&stateCode=");
-  const response = await fetch(`http://127.0.0.1:8000/getParks?start=0&limit=500&sort=&stateCode=${stateCode}`);
+  const response = await fetch(`https://mheyda-server.herokuapp.com/getParks?start=0&limit=500&sort=&stateCode=${stateCode}`);
+  // For development
+  //const response = await fetch(`http://127.0.0.1:8000/getParks?start=0&limit=500&sort=&stateCode=${stateCode}`);
   const json = await response.json();
   const data = await json.data;
   return data;
