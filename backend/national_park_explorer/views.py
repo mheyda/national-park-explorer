@@ -28,5 +28,9 @@ def getWeather(request):
 @api_view(['GET'])
 def getParks(request):
     if request.method == 'GET':
-        parks = requests.get(f'https://developer.nps.gov/api/v1/parks?limit=500&api_key={settings.NPS_API_KEY}').json()
+        start = request.query_params.get('start')
+        limit = request.query_params.get('limit')
+        sort = request.query_params.get('sort')
+        stateCode = request.query_params.get('stateCode')
+        parks = requests.get(f'https://developer.nps.gov/api/v1/parks?start={start}&limit={limit}&sort={sort}&stateCode={stateCode}&api_key={settings.NPS_API_KEY}').json()
         return Response(parks)

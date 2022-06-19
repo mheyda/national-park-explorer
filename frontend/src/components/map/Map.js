@@ -34,7 +34,6 @@ export default function Map( { parks }) {
                             </Link>
                         </Marker>;
             })}
-            
         </MapContainer>
     );
 }

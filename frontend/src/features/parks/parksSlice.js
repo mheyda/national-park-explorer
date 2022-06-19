@@ -1,8 +1,10 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 
 
-export const fetchParks = createAsyncThunk('parks/fetchParks', async () => {
-  const response = await fetch("https://mheyda-server.herokuapp.com/getParks");
+export const fetchParks = createAsyncThunk('parks/fetchParks', async (options) => {
+  //const response = await fetch("https://mheyda-server.herokuapp.com/getParks?start=10&limit=2&sort=fullName&stateCode=");
+  const { start, limit, sort, stateCode } = options;
+  const response = await fetch(`http://127.0.0.1:8000/getParks?start=${start}&limit=${limit}&sort=${sort}&stateCode=${stateCode}`);
   const json = await response.json();
   const data = await json.data;
   return data;
@@ -14,6 +16,7 @@ export const parksSlice = createSlice({
   initialState: {
     allParks: [],
     filteredParks: [],
+    parks: [],
     sort: 'Alphabetical (A-Z)',
     filter: 'All',
     view: 'list',
@@ -61,6 +64,7 @@ export const parksSlice = createSlice({
           // Add fetched parks to state
           state.allParks = action.payload;
           state.filteredParks = action.payload;
+          action.payload.map(park => state.parks.push(park));
         } catch(e) {
           alert("Error: " + e);
         }
@@ -76,6 +80,7 @@ export const { setParks, filterParks, sortParks, changeView } = parksSlice.actio
 
 export const selectAllParks = (state) => state.parks.allParks;
 export const selectFilteredParks = (state) => state.parks.filteredParks;
+export const selectParks = (state) => state.parks.parks;
 export const selectSort = (state) => state.parks.sort;
 export const selectFilter = (state) => state.parks.filter;
 export const selectView = (state) => state.parks.view;
