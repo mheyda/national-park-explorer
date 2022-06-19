@@ -1,7 +1,7 @@
 import ExploreTile from './ExploreTile.js';
 import { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
-import { fetchParks } from '../../features/parks/parksSlice';
+import { fetchIntervalParks } from '../../features/parks/parksSlice';
 import { useInView } from 'react-intersection-observer';
 
 export default function ExploreTiles( { parks } ) {
@@ -17,7 +17,7 @@ export default function ExploreTiles( { parks } ) {
 
     // When user reaches end of page, fetch more parks
     useEffect(() => {
-        dispatch(fetchParks({start: start, limit: interval, sort: 'fullName', stateCode: ''}));
+        dispatch(fetchIntervalParks({start: start, limit: interval, sort: 'fullName', stateCode: ''}));
         setStart(start + interval);
     }, [inView, dispatch])
 

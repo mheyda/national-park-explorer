@@ -1,14 +1,14 @@
 import Map from '../../components/map/Map.js';
 import ExploreTiles from '../../components/exploreTiles/ExploreTiles.js';
 import './Explore.css';
-import { selectParks } from '../../features/parks/parksSlice.js';
-import { selectView } from '../../features/parks/parksSlice.js';
+import { selectListParks, selectMapParks, selectView } from '../../features/parks/parksSlice.js';
 import { useSelector } from 'react-redux';
 import OptionsBar from '../../components/optionsBar/OptionsBar.js';
 
 
 export default function Explore() {
-    const parks = useSelector(selectParks);
+    const listParks = useSelector(selectListParks);
+    const mapParks = useSelector(selectMapParks);
     const view = useSelector(selectView);
 
     if (view === 'list') {
@@ -16,7 +16,7 @@ export default function Explore() {
             <main className='explore-container'>
                 <OptionsBar />
                 <div className='explore'>
-                    <ExploreTiles parks={parks} />
+                    <ExploreTiles parks={listParks} />
                 </div>
             </main>
         );
@@ -24,7 +24,7 @@ export default function Explore() {
         return (
             <>
                 <OptionsBar />
-                <Map parks={parks} />
+                <Map parks={mapParks} />
             </>
         );
     }
