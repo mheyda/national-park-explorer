@@ -7,7 +7,7 @@ export default function Image({ src, alt, style, className, root }) {
     const { ref, inView } = useInView({
         threshold: 0,
         root: root,
-        rootMargin: '0px 5px 0px 5px'
+        //rootMargin: '0px 5px 0px 5px'
     });
 
     const [isLoading, setIsLoading] = useState(true);
