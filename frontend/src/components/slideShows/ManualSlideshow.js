@@ -5,7 +5,6 @@ import './Slideshow.css';
 
 export default function ManualSlideshow( { images } ) {
 
-    const root = useRef(null)
     const [imgIndex, setImgIndex] = useState(0);
     const [dotsStyling, setDotsStyling] = useState({ transform: 'translateX(0px)', transition: '0.8s' })
 
@@ -23,14 +22,14 @@ export default function ManualSlideshow( { images } ) {
     }, [imgIndex, images.length])
 
     return (
-        <div className='slideshow' ref={root}>
+        <div className='slideshow'>
             <div className='slideshow-btns'>
                 <i className='slideshow-left fa-solid fa-circle-arrow-left' onClick={(e) => {imgIndex === 0 ? setImgIndex(images.length - 1) : setImgIndex(imgIndex - 1); e.preventDefault()}}></i>
                 <i className="slideshow-right fa-solid fa-circle-arrow-right" onClick={(e) => {imgIndex === images.length - 1 ? setImgIndex(0) : setImgIndex(imgIndex + 1); e.preventDefault()}}></i>
             </div>
             <div className="slides" >
                 {images.map((image, index) => (                    
-                    <Image className='slide' root={root.current} key={index} src={image.url} alt={image.altText} style={{ transform: `translateX(${-imgIndex * 100}%)`, transition: '0.8s' }} loading='lazy' />
+                    <Image className='slide' key={index} src={image.url} alt={image.altText} style={{ transform: `translateX(${-imgIndex * 100}%)`, transition: '0.8s' }} loading='lazy' />
             ))}
             </div>
             <div className='slideshow-dots-container'>

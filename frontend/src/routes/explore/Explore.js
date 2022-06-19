@@ -27,7 +27,7 @@ export default function Explore() {
             <main className='explore-container'>
                 <OptionsBar />
                 <div className='explore'>
-                    <ExploreTiles parks={filteredParks} itemsPerPage={12} />
+                    <ExploreTiles parks={filteredParks} />
                 </div>
             </main>
         );
