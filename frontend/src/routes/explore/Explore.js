@@ -3,7 +3,7 @@ import ExploreTiles from '../../components/exploreTiles/ExploreTiles.js';
 import './Explore.css';
 import { selectAllParks, selectListParks, selectMapParks, selectQuery, selectSort, selectView, selectFilter, filterParks } from '../../features/parks/parksSlice.js';
 import { useDispatch, useSelector } from 'react-redux';
-import OptionsBar from '../../components/optionsBar/OptionsBar.js';
+import ViewToggler from '../../components/viewToggler/ViewToggler.js';
 import { useEffect } from 'react';
 
 export default function Explore() {
@@ -26,17 +26,17 @@ export default function Explore() {
     if (view === 'list') {
         return (
             <main className='explore-container'>
-                <OptionsBar />
                 <div className='explore'>
                     <ExploreTiles parks={listParks} />
                 </div>
+                <ViewToggler />
             </main>
         );
     } else if (view === 'map') {
         return (
             <>
-                <OptionsBar />
                 <Map parks={mapParks} />
+                <ViewToggler />
             </>
         );
     }

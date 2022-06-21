@@ -58,7 +58,6 @@ export const parksSlice = createSlice({
 
       // Filter by query
       if (state.query) {
-        console.log('Searchedddddd')
         const query = state.query;
         let tokens = query.toLowerCase().split(' ').filter(token => token.trim() !== ''); // Tokenize the query
         let queryRegex = new RegExp(tokens.join('|'), 'gim'); // Create regex
