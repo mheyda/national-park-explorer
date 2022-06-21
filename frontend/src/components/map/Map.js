@@ -1,21 +1,9 @@
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import { Link } from 'react-router-dom';
-import { useEffect } from 'react';
-import { selectFilter, fetchAllParks } from '../../features/parks/parksSlice';
-import { useDispatch, useSelector } from 'react-redux';
 import ManualSlideshow from '../slideShows/ManualSlideshow';
 import './Map.css';
 
 export default function Map( { parks }) {
-
-    const dispatch = useDispatch();
-    const filter = useSelector(selectFilter);
-
-    useEffect(() => {
-        dispatch(fetchAllParks({
-            stateCode: filter.stateCode,
-        }))
-    }, [filter, dispatch])
 
     return (
         <MapContainer className={'map-container'} center={[38, -97]} zoom={3} scrollWheelZoom={true} maxBounds={[[-90, -360], [90, 360]]} maxBoundsViscosity={1}>

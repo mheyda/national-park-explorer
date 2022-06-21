@@ -1,9 +1,9 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 
 
-export const fetchIntervalParks = createAsyncThunk('parks/fetchIntervalParks', async (options) => {
-  const { start, limit, sort, stateCode } = options;
-  const response = await fetch(`https://mheyda-server.herokuapp.com/getParks?start=${start}&limit=${limit}&sort=${sort}&stateCode=${stateCode}`);
+export const fetchFirstIntervalParks = createAsyncThunk('parks/fetchIntervalParks', async (options) => {
+  const { limit } = options;
+  const response = await fetch(`https://mheyda-server.herokuapp.com/getParks?start=0&limit=${limit}&sort=fullName&stateCode=`);
   // For development
   //const response = await fetch(`http://127.0.0.1:8000/getParks?start=${start}&limit=${limit}&sort=${sort}&stateCode=${stateCode}`);
   const json = await response.json();
@@ -11,114 +11,152 @@ export const fetchIntervalParks = createAsyncThunk('parks/fetchIntervalParks', a
   return data;
 })
 
-export const fetchAllParks = createAsyncThunk('parks/fetchAllParks', async (options) => {
-  const { stateCode } = options;
-  const response = await fetch(`https://mheyda-server.herokuapp.com/getParks?start=0&limit=500&sort=&stateCode=${stateCode}`);
+export const fetchAllParks = createAsyncThunk('parks/fetchAllParks', async () => {
+  const response = await fetch(`https://mheyda-server.herokuapp.com/getParks?start=0&limit=500&sort=fullName&stateCode=`);
   // For development
-  //const response = await fetch(`http://127.0.0.1:8000/getParks?start=0&limit=500&sort=&stateCode=${stateCode}`);
+  //const response = await fetch(`http://127.0.0.1:8000/getParks?start=0&limit=500&sort=fullName&stateCode=`);
   const json = await response.json();
   const data = await json.data;
   return data;
 })
 
-
 export const parksSlice = createSlice({
   name: 'parks',
   initialState: {
+    allParks: [],
     listParks: [],
     mapParks: [],
-    filteredParks: [],
+    interval: 12,
     sort: 'Alphabetical (A-Z)',
     filter: {
-      designation: 'All',
-      stateCode: '',
+      designations: [],
+      stateCodes: [],
     },
+    query: '',
     view: 'list',
-    status: 'idle',
+    allParksStatus: 'idle',
+    intervalParksStatus: 'idle',
     error: null
   },
   reducers: {
     setFilter: (state, action) => {
       state.filter = action.payload;
     },
-    setParks: (state, action) => {
-      state.allParks = action.payload;
-      state.filteredParks = action.payload;
+    setQuery: (state, action) => {
+      state.query = action.payload;
     },
-    filterParks: (state, action) => {
-      if (action.payload === 'All') {
-        state.filteredParks = state.allParks;
-      } else {
-        state.filteredParks = state.allParks.filter(park => park.fullName.includes(action.payload));
-      }
-      state.filter = action.payload;
-    },
-    sortParks: (state, action) => {
+    setSort: (state, action) => {
       state.sort = action.payload;
-      switch (action.payload) {
+    },
+    setView: (state, action) => {
+      state.view = action.payload.view;
+    },
+    filterParks: (state) => {
+      // Reinitialize parks
+      state.mapParks = state.allParks;
+      state.listParks = state.allParks;
+
+      // Filter by query
+      if (state.query) {
+        console.log('Searchedddddd')
+        const query = state.query;
+        let tokens = query.toLowerCase().split(' ').filter(token => token.trim() !== ''); // Tokenize the query
+        let queryRegex = new RegExp(tokens.join('|'), 'gim'); // Create regex
+        let parkStrings = []; // Create park strings to compare regex to... park properties that are used are specified
+        state.allParks.map((park, index) => {
+          parkStrings[index] = { id: park.id, string: '' };
+          for (let key in park) {
+            if (key === 'fullName' || key === 'description') { // Park properties to use for the search
+              if (park.hasOwnProperty(key) && park[key] !== '') {
+                parkStrings[index].string += park[key].toString().toLowerCase().trim() + ' ';
+              }
+            }
+          }
+          return true;
+        });
+        const matches = parkStrings.filter(parkString => parkString.string.match(queryRegex)); // Park string objects that the search matched
+        state.listParks = matches.map(match => state.allParks.find(park => park.id === match.id));
+        state.mapParks = matches.map(match => state.allParks.find(park => park.id === match.id));
+      }
+
+      // Filter by state codes
+      if (state.filter.stateCodes.length > 0) {
+        state.mapParks = state.mapParks.filter(park => park.states.split(',').some(element => state.filter.stateCodes.includes(element)));
+        state.listParks = state.listParks.filter(park => park.states.split(',').some(element => state.filter.stateCodes.includes(element)));
+      }
+
+      // Filter by designation
+      if (state.filter.designations.length > 0) {
+        state.mapParks = state.mapParks.filter(park => state.filter.designations.some(designation => park.designation.includes(designation)));
+        state.listParks = state.listParks.filter(park => state.filter.designations.some(designation => park.designation.includes(designation)));
+      }
+
+      // Sort parks
+      switch(state.sort) {
         case 'Alphabetical (A-Z)':
-          state.filteredParks = state.filteredParks.sort((a, b) => a.fullName.localeCompare(b.fullName));
+          state.listParks = state.listParks.sort((a, b) => a.fullName.localeCompare(b.fullName));
           break;
         case 'Reverse Alphabetical (Z-A)':
-          state.filteredParks = state.filteredParks.sort((a, b) => b.fullName.localeCompare(a.fullName));
+          state.listParks = state.listParks.sort((a, b) => b.fullName.localeCompare(a.fullName));
           break;
         default:
           return;
       }
+
+      // Only display x-number of parks at a time in list view
+      state.listParks = state.listParks.slice(0, state.interval);
     },
-    changeView: (state, action) => {
-      state.view = action.payload.view;
-    },
+    getNextParks: (state) => {
+      state.mapParks.slice(state.listParks.length, state.listParks.length + state.interval).map(park => state.listParks.push(park))
+    }
   },
   extraReducers(builder) {
     builder
-      .addCase(fetchIntervalParks.pending, (state) => {
-        state.status = 'loading';
+      .addCase(fetchFirstIntervalParks.pending, (state) => {
+        state.intervalParksStatus = 'loading';
       })
-      .addCase(fetchIntervalParks.fulfilled, (state, action) => {
+      .addCase(fetchFirstIntervalParks.fulfilled, (state, action) => {
         try {
-          state.status = 'succeeded'
-          // Add fetched parks to state
-          state.allParks = action.payload;
-          state.filteredParks = action.payload;
-          action.payload.map(park => state.listParks.push(park));
+          state.intervalParksStatus = 'succeeded'
+          // Add fetched parks to list view
+          state.listParks = action.payload;
         } catch(e) {
-          alert("Error: " + e);
+          console.log("Error: " + e);
         }
       })
-      .addCase(fetchIntervalParks.rejected, (state, action) => {
-        state.status = 'failed';
+      .addCase(fetchFirstIntervalParks.rejected, (state, action) => {
+        state.intervalParksStatus = 'failed';
         state.error = action.error.message;
       })
       .addCase(fetchAllParks.pending, (state) => {
-        state.status = 'loading';
+        state.allParksStatus = 'loading';
       })
       .addCase(fetchAllParks.fulfilled, (state, action) => {
         try {
-          state.status = 'succeeded'
-          // Add fetched parks to state
+          state.allParksStatus = 'succeeded'
+          // Add fetched parks to state depending on the current designation filter
+          state.allParks = action.payload;
           state.mapParks = action.payload;
-          console.log('fetched')
-          console.log(action)
         } catch(e) {
           alert("Error: " + e);
         }
       })
       .addCase(fetchAllParks.rejected, (state, action) => {
-        state.status = 'failed';
+        state.allParksStatus = 'failed';
         state.error = action.error.message;
       })
   },
 });
 
-export const { setParks, filterParks, sortParks, changeView } = parksSlice.actions;
+export const { setFilter, setSort, setQuery, setView, filterParks, getNextParks } = parksSlice.actions;
 
 export const selectAllParks = (state) => state.parks.allParks;
 export const selectMapParks = (state) => state.parks.mapParks;
-export const selectFilteredParks = (state) => state.parks.filteredParks;
 export const selectListParks = (state) => state.parks.listParks;
+export const selectInterval = (state) => state.parks.interval;
 export const selectSort = (state) => state.parks.sort;
 export const selectFilter = (state) => state.parks.filter;
+export const selectQuery = (state) => state.parks.query;
 export const selectView = (state) => state.parks.view;
 
 export default parksSlice.reducer;

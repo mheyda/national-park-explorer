@@ -15,7 +15,7 @@ export default function ExploreTile( { park } ) {
     // Keep DOM elements to minimum until they are needed / in view
     const { ref, inView } = useInView({
         threshold: 0,
-        rootMargin: '0px 0px 200px 0px',
+        rootMargin: '0px 0px 100px 0px',
         triggerOnce: true,
     });
 

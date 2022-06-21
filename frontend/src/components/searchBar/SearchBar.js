@@ -1,15 +1,17 @@
+import { useState } from 'react';
+import { useSelector } from 'react-redux';
+import { selectQuery } from '../../features/parks/parksSlice';
 
+export default function SearchBar({ handleSearch }) {
 
-export default function SearchBar() {
+    const query = useSelector(selectQuery);
 
+    const [currentQuery, setCurrentQuery] = useState(query);
 
     return (
-        <div>
-            <form>
-                <input type='text' placeholder='Search' />
-                <input type='submit' />
-            </form>
-        </div>
-        
+        <form onSubmit={handleSearch}>
+            <input type='text' id='queryTerm' value={currentQuery} onChange={(e) => setCurrentQuery(e.target.value)} placeholder='Search' />
+            <input type='submit' />
+        </form>  
     );
 }

@@ -41,6 +41,5 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  },
-  "proxy": "https://national-park-explorer-server2.herokuapp.com"
+  }
 }
