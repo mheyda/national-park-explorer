@@ -17,6 +17,12 @@ img {
   max-height: 100%;
 }
 
+button {
+  -webkit-color: black;
+  -moz-color: black;
+  color: black;
+}
+
 button:hover {
   cursor: pointer;
 }
