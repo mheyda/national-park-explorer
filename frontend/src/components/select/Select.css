@@ -1,12 +1,12 @@
 .select-container select {
     color: black;
-    height: 2rem;
-    padding-left: 0.5rem;
-    background: url('../../assets/images/chevron-down-solid.svg') no-repeat right 0.5rem center;
+    height: 3rem;
+    padding: 0.5rem 1rem;
+    width: 100%;
+    background: url('../../assets/images/chevron-down-solid.svg') no-repeat right 1rem center;
     background-size: 12px;
     -moz-appearance: none; 
     -webkit-appearance: none; 
     appearance: none;
-    border: 1px solid black;
-    border-radius: 5px;
-  }
+    border: 1px solid lightgray;
+}
