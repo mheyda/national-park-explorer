@@ -5,40 +5,75 @@
     position: -webkit-sticky;
 	position: sticky;
 	top: 0;
-    /* If height changes, change map height as well */
-    height: 96px;
 }
 
 .navbar {
-    background-size: cover;
-    background-position: center;
     padding-top: 0.5rem;
     padding-bottom: 0.5rem;
 }
 
-.nav-content {
+.options-bar {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+}
+
+@media (min-width: 576px) {
+    .options-bar {
+        flex-wrap: wrap;
+        justify-content: space-between;
+    }
 }
 
 .nav-logo {
-    height: 75px;
     padding-right: 10px;
 }
 
-.nav-title {
-    text-align: right;
-    font-size: 1.5rem;
-    color: #484848;
-}   
-
-.nav-links {
-    display: flex;
+.nav-logo img {
+    height: 50px;
 }
 
-.nav-link {
-    padding: 0.5rem 0;
-    text-align: center;
-    width: 50%;
+.nav-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-right: auto;
+}
+
+@media (min-width: 576px) {
+    .nav-logo img {
+        height: 70px;
+    }
+    .nav-title {
+        font-size: 1rem;
+    }
+}
+
+.options-btn {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 100%;
+    border: 1px solid lightgray;
+    margin-left: 10px;
+    background-color: inherit;
+}
+
+@keyframes openSearch {
+    from {
+        height: 0px;
+        margin: 0;
+    }
+    to {
+        height: 3rem;
+        margin: 1rem 0;
+    }
+}
+
+@keyframes closeSearch {
+    from {
+        height: 3rem;
+        margin: 1rem 0;
+    }
+    to {
+        height: 0px;
+        margin: 0;
+    }
 }

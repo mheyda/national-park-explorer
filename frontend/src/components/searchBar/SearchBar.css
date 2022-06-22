@@ -1,0 +1,28 @@
+.search-bar {
+    box-shadow: rgba(100, 100, 111, 0.2) 0px 5px 29px 0px;
+    position: relative;
+    border-radius: 1000px;
+    height: 0px;
+    overflow: hidden;
+    background-color: inherit;
+    display: flex;
+}
+
+.search-bar input[type='text'] {
+    font-size: 1rem;
+    border-radius: 1000px;
+    border: 1px solid lightgray;
+    width: 100%;
+    padding-right: 3rem;
+    padding-left: 10px;
+    margin-right: auto;
+}
+
+.search-bar input[type='text']:focus ~ button[type='submit'] {
+    border: 1px solid black;
+}
+
+.search-bar button[type='submit'] {
+    position: absolute;
+    right: 0;
+}

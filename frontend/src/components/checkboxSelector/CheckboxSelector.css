@@ -1,0 +1,36 @@
+.checkbox-selector {
+}
+
+.checkbox-header {
+    height: 3rem;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    border: 1px solid lightgray;
+    background-color: inherit;
+}
+
+.checkbox-header:focus {
+    border: 2px solid black;
+}
+
+.checkbox-header i {
+    margin-left: auto;
+}
+
+.options {
+    padding: 0.5rem 1rem;
+    text-align: left;
+}
+
+.option {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    padding: 0.25rem 0;
+}
+
+.checkbox {
+    margin-right: 5px;
+}

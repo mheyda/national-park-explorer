@@ -1,24 +1,25 @@
 import ExploreTile from './ExploreTile.js';
-import { useState, useEffect } from 'react';
-import { useDispatch } from 'react-redux';
-import { fetchIntervalParks } from '../../features/parks/parksSlice';
+import { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { getNextParks } from '../../features/parks/parksSlice';
 import { useInView } from 'react-intersection-observer';
 
 export default function ExploreTiles( { parks } ) {
 
     const dispatch = useDispatch();
-    const interval = 6;
-    const [start, setStart] = useState(parks.length);
+    const intervalParksStatus = useSelector(state => state.parks.intervalParksStatus);
 
     const { ref, inView } = useInView({
         threshold: 0,
-        rootMargin: '0px 0px 200px 0px',
+        rootMargin: '0px 0px 100px 0px',
     })
 
-    // When user reaches end of page, fetch more parks
     useEffect(() => {
-        dispatch(fetchIntervalParks({start: start, limit: interval, sort: 'fullName', stateCode: ''}));
-        setStart(start + interval);
+        setTimeout(() => {
+            if (parks && parks.length > 0 && inView) {
+                dispatch(getNextParks());
+            }
+        }, 100)
     }, [inView, dispatch])
 
     if (parks && parks.length > 0) {
@@ -34,7 +35,9 @@ export default function ExploreTiles( { parks } ) {
         );
     } else {
         return (
-            <>Loading parks...</>
+            intervalParksStatus === 'succeeded'
+            ? <>Sorry! Nothing matched your search.</>
+            : <>Loading parks...</>
         );
     }
 

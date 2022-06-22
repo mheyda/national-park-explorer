@@ -1,17 +1,5 @@
-.options-bar {
-    display: block;
-}
-
-@media (min-width: 576px) {
-    .options-bar {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: space-between;
-    }
-}
 
 .view-btn {
-    z-index: 1;
     position: fixed;
     bottom: 7%;
     left: 50%;
@@ -31,12 +19,4 @@
 
 .view-btn i {
     padding: 5px;
-}
-
-.options-bar .select-container {
-    padding-bottom: 0.5rem;    
-}
-
-.options-bar select {
-    width: 100%;
 }
