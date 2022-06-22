@@ -1,6 +1,6 @@
 import './Park.css';
 import { Link } from 'react-router-dom';
-import AutoSlideshow from '../../components/slideShows/AutoSlideshow.js';
+import ManualSlideshow from '../../components/slideShows/ManualSlideshow.js';
 import WeatherCurrent from '../../features/weather/weatherCurrent/WeatherCurrent.js';
 import Weather7Day from '../../features/weather/weather7Day/Weather7Day.js';
 import WeatherFormatToggler from '../../features/weather/WeatherFormatToggler.js';
@@ -18,7 +18,7 @@ export default function Park() {
             <div className='park'>
                 <div className='park-img-container'>
                     <div className='park-img'>
-                        <AutoSlideshow images={park.images} />
+                        <ManualSlideshow images={park.images} />
                     </div>
                 </div>
                 <div>
