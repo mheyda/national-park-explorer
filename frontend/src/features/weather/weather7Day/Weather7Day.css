@@ -1,9 +1,3 @@
-.weather-7day-content {
-    height: 250px;
-    overflow-y: scroll;
-    padding-right: 1rem;
-}
-
 .weather-7day-item {
     display: grid;
     grid-template-columns: minmax(30%, 1fr) minmax(30%, 1fr) minmax(30%, 1fr);
@@ -12,7 +6,6 @@
 
 .weather-7day-day {
     text-align: left;
-    padding-left: 1rem;
 }
 
 .weather-7day-temps {
@@ -22,4 +15,10 @@
 .weather-7day-icon {
     margin-bottom: -20px;
     height: 60px;
+}
+
+@media (min-width: 768px) {
+    .weather-7day-container {
+        padding-left: 1rem;
+    }
 }

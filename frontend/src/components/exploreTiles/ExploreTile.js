@@ -21,7 +21,10 @@ export default function ExploreTile( { park } ) {
 
     if (inView) {
         return (
-            <Link to={`${park.fullName}/${park.parkCode}`} onClick={() => sessionStorage.setItem('currentPark', JSON.stringify(park))}>
+            <Link to={`${park.fullName}/${park.parkCode}`} onClick={() => {
+                sessionStorage.setItem('currentPark', JSON.stringify(park));
+                window.scrollTo({top: 0, behavior: 'initial'});
+            }}>
                 <li className='explore-tile' id={park.fullName} >
                     <div className='explore-tile-img-container'>
                         <div className='explore-tile-img'>
