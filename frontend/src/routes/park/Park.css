@@ -5,7 +5,6 @@
 
 .park-header-title {
   width: 75%;
-  font-size: 0.7rem;
   color: white;
   z-index: 1;
   position: absolute;
@@ -17,6 +16,7 @@
 
 .park-header-title h1 {
   font-weight: 400;
+  font-size: 1.8rem;
 }
 
 .park-header img {
@@ -28,9 +28,6 @@
 }
 
 @media (min-width: 768px) {
-  .park-header-title {
-    font-size: 0.9rem;
-  }
   .park-header img {
     max-height: 400px;
   }
@@ -173,20 +170,6 @@
   }
 }
 
-.park-addresses {
-  display: grid;
-  grid-template-columns: minmax(100%, 1fr);
-}
-
-.park-mailing-address {
-  text-align: left;
-}
-
-.park-contact-info {
-  text-align: right;
-}
-
-
 .hours-section {
   margin-bottom: 2rem;
   padding-bottom: 2rem;
@@ -198,20 +181,6 @@
   border-bottom: none;
   margin-bottom: 0;
   padding-bottom: 0;
-}
-
-@media (min-width: 768px) {
-  .park-addresses {
-    display: grid;
-    grid-template-columns: minmax(30%, 1fr) minmax(30%, 1fr) minmax(30%, 1fr);
-  }
-  .park-mailing-address {
-    text-align: center;
-  }
-  .park-hours {
-    display: grid;
-    grid-template-columns: minmax(50%, 1fr) minmax(50%, 1fr);
-  }
 }
 
 .activities-list {
@@ -231,9 +200,37 @@
   }
 }
 
+
+/* Contact Footer */
 .park-footer {
   border-top: 5px solid #484848;
   background-color: #e5e5e5;
-  padding-top: 3rem;
-  padding-bottom: 3rem;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+  text-align: center;
+}
+
+.park-addresses {
+  display: grid;
+  grid-template-columns: minmax(100%, 1fr);
+  grid-row-gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .park-footer {
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+  }
+  .park-addresses {
+    display: grid;
+    grid-template-columns: minmax(30%, 1fr) minmax(30%, 1fr) minmax(30%, 1fr);
+    grid-row-gap: 0;
+    grid-column-gap: 2rem;
+  }
+  .park-physical-address {
+    text-align: left;
+  }
+  .park-contact-info {
+    text-align: right;
+  }
 }
