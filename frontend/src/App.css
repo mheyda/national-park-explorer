@@ -41,7 +41,7 @@ a {
 }
 
 main, .navbar {
-  max-width: 1400px;
+  max-width: 1200px;
   margin-left: auto;
   margin-right: auto;
   padding-left: 1rem;
@@ -50,6 +50,10 @@ main, .navbar {
 
 main {
   padding: 1rem 1rem 2rem 1rem;
+}
+
+strong {
+  font-weight: 600;
 }
 
 @media (min-width: 576px) {

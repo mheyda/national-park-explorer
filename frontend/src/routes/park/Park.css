@@ -1,41 +1,170 @@
-.park {
-  display: grid;
-  grid-template-columns: minmax(100%, 1fr);
-  grid-column-gap: 1rem;
+/* Banner Header */
+.park-header {
+  position: relative;
+}
+
+.park-header-title {
+  width: 75%;
+  font-size: 0.7rem;
+  color: white;
+  z-index: 1;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.park-header-title h1 {
+  font-weight: 400;
+}
+
+.park-header img {
+  object-fit: cover;
+  object-position: 50% 25%;
+  filter: brightness(70%);
+  height: 50vh;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .park-header-title {
+    font-size: 0.9rem;
+  }
+  .park-header img {
+    max-height: 400px;
+  }
+}
+
+.park-back-btn {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  color: #d0d0d0;
+  border-radius: 100%;
+  font-size: 24px;
+  padding: 15px;
+  background-color: transparent;
+  border: none;
+}
+
+.park-back-btn:hover {
+  cursor: pointer;
+  color: white;
+}
+
+
+/* Park navigation */
+.park-nav {
+  display: flex;
+  margin-left: auto;
+  margin-right: auto;
+  max-width: fit-content;
+  height: 85px;
+  overflow: auto;
+  padding-bottom: 0.5rem;
+  /* Hide scroll bar */
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  scrollbar-width: none;  /* Firefox */
+}
+.park-nav::-webkit-scrollbar { 
+  display: none;  /* Safari and Chrome */
+}
+
+.park-nav-btn {
+  font-size: 0.7rem;
+  min-width: 90px;
+  border: none;
+  background-color: inherit;
+}
+
+.park-nav-btn.active {
+  border-bottom: 2px solid gray;
+  margin-bottom: -2px;
+}
+
+.park-nav-btn i {
+  font-size: 24px;
+  color: #484848;
+  margin-bottom: 10px;
+  display: block;
+}
+
+
+/* Main */
+.park-section {
+  display: none;
+  padding: 2rem 0;
+}
+
+.park-section.active {
+  display: block;
+}
+
+.park-section-paragraph {
+  margin-bottom: 1rem;
+}
+
+.park-section h1, 
+.park-section h2 {
+  text-align: left;
+  margin-bottom: 1rem;
+}
+
+.park-section h3 {
+  text-align: center;
+  margin-bottom: 1rem;
 }
 
 .park-img-container {
-  height: 75vw;
-  margin-bottom: 1rem;
+  height: 90vw;
+  max-height: 80vh;
 }
 
 .park-img {
   height: 100%;
   -webkit-border-radius: 15px;
   border-radius: 15px;
+  position: relative;
   overflow: hidden;
   isolation: isolate;
 }
 
-.park-section {
-  padding-bottom: 1rem;
-  position: relative;
+@media (min-width: 768px) {
+  .park-img-container {
+    position: relative;
+  }
 }
+
+
+
+
 
 .park-weather {
   display: grid;
   grid-template-columns: minmax(100%, 1fr);
   grid-row-gap: 2rem;
   text-align: center;
-  padding: 1rem 0;
 }
 
-@media (min-width: 576px) {
+.weather-general-container {
+  padding-bottom: 2rem;
+}
+
+.weather-general-content {
+  word-wrap: break-word;
+  text-align: left;
+}
+
+@media (min-width: 768px) {
   .park-weather {
-    grid-template-columns: minmax(40%, 1fr) minmax(60%, 1fr);
+    grid-template-columns: minmax(50%, 1fr) minmax(50%, 1fr);
   }
-  .weather-current-container {
-    border-right: 2px solid black;
+  .weather-general-and-current {
+    border-right: 1px solid lightgray;
+    padding-right: 1rem;
   }
   .weather-7day-item {
     display: grid;
@@ -44,16 +173,67 @@
   }
 }
 
-@media (min-width: 992px) {
-  .park {
-    grid-template-columns: minmax(50%, 1fr) minmax(0, 1fr);
-    grid-gap: 2rem;
-    padding-bottom: 2rem;
+.park-addresses {
+  display: grid;
+  grid-template-columns: minmax(100%, 1fr);
+}
+
+.park-mailing-address {
+  text-align: left;
+}
+
+.park-contact-info {
+  text-align: right;
+}
+
+
+.hours-section {
+  margin-bottom: 2rem;
+  padding-bottom: 2rem;
+  text-align: center;
+  border-bottom: 1px solid gray;
+}
+
+.hours-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+@media (min-width: 768px) {
+  .park-addresses {
+    display: grid;
+    grid-template-columns: minmax(30%, 1fr) minmax(30%, 1fr) minmax(30%, 1fr);
   }
-  .park-img-container {
-    position: relative;
-    height: 40vw;
-    max-height: 60vh;
+  .park-mailing-address {
+    text-align: center;
+  }
+  .park-hours {
+    display: grid;
+    grid-template-columns: minmax(50%, 1fr) minmax(50%, 1fr);
   }
 }
 
+.activities-list {
+  display: grid;
+  grid-template-columns: minmax(50%, 1fr) minmax(50%, 1fr);
+  align-items: center;
+}
+
+.activity-item {
+  text-align: center;
+  padding: 0.25rem 0.5rem;
+}
+
+@media (min-width: 768px) {
+  .activities-list {
+    grid-template-columns: minmax(30%, 1fr) minmax(30%, 1fr) minmax(30%, 1fr);
+  }
+}
+
+.park-footer {
+  border-top: 5px solid #484848;
+  background-color: #e5e5e5;
+  padding-top: 3rem;
+  padding-bottom: 3rem;
+}
