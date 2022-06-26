@@ -1,4 +1,5 @@
 .checkbox-selector {
+    position: relative;
 }
 
 .checkbox-header {
@@ -9,14 +10,15 @@
     padding: 0.5rem 1rem;
     border: 1px solid lightgray;
     background-color: inherit;
-}
-
-.checkbox-header:focus {
-    border: 2px solid black;
+    position: relative;
 }
 
 .checkbox-header i {
     margin-left: auto;
+}
+
+.checkbox-header:focus {
+    border: 2px solid black;
 }
 
 .options {
@@ -33,4 +35,15 @@
 
 .checkbox {
     margin-right: 5px;
+}
+
+.clear-filter-btn {
+    border: none;
+    background-color: inherit;
+    text-decoration: underline;
+    z-index: 1;
+    position: absolute;
+    right: 3.5rem;
+    top: 1.5rem;
+    transform: translateY(-50%);
 }

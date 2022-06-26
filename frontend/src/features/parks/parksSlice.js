@@ -65,7 +65,7 @@ export const parksSlice = createSlice({
         state.allParks.map((park, index) => {
           parkStrings[index] = { id: park.id, string: '' };
           for (let key in park) {
-            if (key === 'fullName' || key === 'description') { // Park properties to use for the search
+            if (key === 'fullName' || key === 'description' || key === 'activities') { // Park properties to use for the search
               if (park.hasOwnProperty(key) && park[key] !== '') {
                 parkStrings[index].string += park[key].toString().toLowerCase().trim() + ' ';
               }

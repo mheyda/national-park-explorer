@@ -35,7 +35,9 @@
 .nav-title {
     font-size: 0.9rem;
     font-weight: 600;
+    padding-right: 20px;
     margin-right: auto;
+    display: none;
 }
 
 @media (min-width: 576px) {
@@ -44,17 +46,8 @@
     }
     .nav-title {
         font-size: 1rem;
+        display: block;
     }
-}
-
-.options-btn {
-    width: 3rem;
-    height: 3rem;
-    border-radius: 100%;
-    border: 1px solid lightgray;
-    margin-left: 10px;
-    background-color: inherit;
-    color: black;
 }
 
 @keyframes openSearch {
