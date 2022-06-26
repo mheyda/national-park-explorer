@@ -1,5 +1,5 @@
 import './Park.css';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import getStateFullName from '../../functions/getStateFullName.js';
 import ManualSlideshow from '../../components/slideShows/ManualSlideshow.js';
@@ -9,6 +9,10 @@ import WeatherFormatToggler from '../../features/weather/WeatherFormatToggler.js
 
 
 export default function Park() {
+
+    useEffect(() => {
+        window.scrollTo({top: 0, left: 0, behavior: 'auto'});
+    }, [])
 
     const navigate = useNavigate();
     const park = JSON.parse(sessionStorage.getItem('currentPark'));
@@ -23,16 +27,16 @@ export default function Park() {
         document.querySelectorAll('.park-nav-btn').forEach(section => section.classList.remove('active'));
         document.querySelectorAll('.park-nav-btn')[index].classList.add('active');
     }
-console.log(park.states.split(',').map(state => state = getStateFullName(state)))
+
     return (
         <>
             <header className='park-header'>
-                <button className='park-back-btn' onClick={() => navigate(-1)} ><i className="fa-solid fa-circle-chevron-left"></i></button>
-                <p className='park-header-title'>
+                <button className='park-back-btn' onClick={(e) => {e.preventDefault(); navigate(-1)}} ><i className="fa-solid fa-circle-chevron-left"></i></button>
+                <div className='park-header-title'>
                     <h1>{park.name}</h1>
                     <h1>{park.designation}</h1>
                     <p>{park.addresses[0].city}, {park.addresses[0].stateCode}</p>
-                </p>
+                </div>
                 <img src={park.images[0].url} onError={handleImageError} alt={park.images[0].altText} />
             </header>
             <nav className='park-nav'>
@@ -96,11 +100,11 @@ console.log(park.states.split(',').map(state => state = getStateFullName(state))
                 </section>
                 <section className='park-section'>
                     <h2 className='park-section-title'>Hours</h2>
-                    {park.operatingHours.map(hours => {
+                    {park.operatingHours.map((hours, index) => {
                         if (hours.name === hours.description) {
                             return (
-                                <div className='hours-section'>
-                                    <h3>{hours.name.toLowerCase().split(' ').map(word => word[0].toUpperCase() + word.substr(1)).join(' ')}</h3>
+                                <div key={index} className='hours-section'>
+                                    <h3>{hours.name.toLowerCase().trim().split(/\s+/).map(word => word[0].toUpperCase() + word.substr(1)).join(' ')}</h3>
                                     <div>
                                         <p><strong>Sunday: </strong>{hours.standardHours.sunday}</p>
                                         <p><strong>Monday: </strong>{hours.standardHours.monday}</p>
@@ -114,8 +118,8 @@ console.log(park.states.split(',').map(state => state = getStateFullName(state))
                             );
                         } else {
                             return (
-                                <div className='hours-section'>
-                                    <h3>{hours.name.toLowerCase().split(' ').map(word => word[0].toUpperCase() + word.substr(1)).join(' ')}</h3>
+                                <div key={index} className='hours-section'>
+                                    <h3>{hours.name.toLowerCase().trim().split(/\s+/).map(word => word[0].toUpperCase() + word.substr(1)).join(' ')}</h3>
                                     <p className='park-section-paragraph'>{hours.description}</p>
                                     <div>
                                         <p><strong>Sunday: </strong>{hours.standardHours.sunday}</p>

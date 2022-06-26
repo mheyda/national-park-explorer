@@ -1,15 +1,18 @@
 .filter-page-container {
-    position: absolute;
+    position: fixed;
     width: 100vw;
     height: 100vh;
+    z-index: 2;
     left: 0;
     top: 0;
     background-color: rgb(0, 0, 0, 0.5);
 }
 
 .filter-page {
+    display: flex;
+    flex-direction: column;
     overflow: auto;
-    padding: 0 1rem 2rem 1rem;
+    padding: 0 1rem;
     position: relative;
     margin-top: 10vh;
     height: calc(101vh - 10vh);
@@ -33,9 +36,11 @@
     position: sticky;
     top: 0;
     background-color: inherit;
+    z-index: 3;
 }
 
 .filter-page-subheading {
+    position: relative;
     font-weight: 600;
     text-align: left;
     padding: 2rem 0 1rem 0;
@@ -47,10 +52,37 @@
 
 .close-filter-page {
     position: absolute;
-    left: 0;
+    top: 0;
+    right: 0;
+    padding: 1rem;
     background-color: inherit;
     border: none;
-    border-radius: 100%;
+}
+
+.filter-page-footer {
+    position: sticky;
+    margin-top: auto;
+    bottom: 0;
+    background-color: inherit;
+    z-index: 3;
+    padding: 1rem 0;
+}
+
+.clear-all-btn {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    text-decoration: underline;
+    border: none;
+    background-color: inherit;
+}
+
+.apply-filter-btn {
+    width: 100%;
+    background-color: #484848;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 1000px;
 }
 
 @keyframes slideUp {

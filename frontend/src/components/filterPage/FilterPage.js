@@ -1,12 +1,14 @@
 import { useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { selectFilter, setFilter, setQuery, setSort } from '../../features/parks/parksSlice.js';
+import { selectFilter, setFilter, setQuery, selectSort, setSort, selectView } from '../../features/parks/parksSlice.js';
 import CheckboxSelector from '../checkboxSelector/CheckboxSelector.js';
 import Select from '../select/Select.js';
 import './FilterPage.css';
 
 export default function FilterPage({ setFiltersOpen }) {
 
+    const view = useSelector(selectView);
+    const sort = useSelector(selectSort);
     const filterPage = useRef(null);
     const filter = useSelector(selectFilter);
     const dispatch = useDispatch();
@@ -67,22 +69,47 @@ export default function FilterPage({ setFiltersOpen }) {
         dispatch(setSort(newSort));
     }
 
+    const clearSort = (e) => {
+        document.querySelector('select').options.selectedIndex = 0;
+        dispatch(setSort('Alphabetical (A-Z)'));
+    }
+
     return (
         <div ref={filterPage} className='filter-page-container'>
             <div className='filter-page'>
                 <p className='filter-page-header'>
-                    <span className='filter-page-title'>Filter & Sort</span>
+                    <span className='filter-page-title' >{view === 'list' ? 'Filter & Sort' : 'Filter'}</span>
                     <button className='close-filter-page' onClick={() => {
                         setFiltersOpen(false);
                     }}>
                         <i className="fa-solid fa-xmark"></i>
                     </button>
                 </p>
-                <p className='filter-page-subheading'>Sort by</p>
-                <Select name={''} options={sortOptions} onChange={updateSort} />
+                {view === 'list'
+                ?   <> 
+                        <p className='filter-page-subheading'>Sort by</p>
+                        <Select name={''} options={sortOptions} onChange={updateSort} clearSort={clearSort} />
+                    </> 
+                : <></>}
                 <p className='filter-page-subheading'>Filter by</p>
                 <CheckboxSelector name={'Park Designation'} filterTitle={'designations'} options={designationOptions} handleChange={updateDesignations} />
                 <CheckboxSelector name={'State & Territory'} filterTitle={'stateCodes'} options={stateOptions} handleChange={updateStateCodes} />
+                {view === 'list'
+                ?   <p className='filter-page-footer'>
+                        {sort !== 'Alphabetical (A-Z)' || !Object.values(filter).every(value => value.length === 0) ? <button className='clear-all-btn' onClick={() => {
+                            clearSort();
+                            dispatch(setFilter({designations: [], stateCodes: []}));
+                        }}>Clear All</button> : <></>}
+                        <br></br>
+                        {/*<button className='apply-filter-btn'>Apply</button>*/}
+                    </p>
+                :   <p className='filter-page-footer'>
+                        {!Object.values(filter).every(value => value.length === 0) ? <button className='clear-all-btn' onClick={() => {
+                            dispatch(setFilter({designations: [], stateCodes: []}));
+                        }}>Clear All</button> : <></>}
+                        <br></br>
+                        {/*<button className='apply-filter-btn'>Apply</button>*/}
+                    </p>}
             </div>
         </div>
     );
