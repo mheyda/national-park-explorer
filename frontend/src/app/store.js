@@ -1,5 +1,5 @@
 import { configureStore } from '@reduxjs/toolkit';
-import parksReducer from '../features/parks/parksSlice';
+import parksReducer from '../features/explore/exploreSlice';
 import weatherReducer from '../features/weather/weatherSlice';
 
 export const store = configureStore({
