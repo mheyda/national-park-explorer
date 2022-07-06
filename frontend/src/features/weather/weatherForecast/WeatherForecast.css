@@ -1,0 +1,24 @@
+.weather-forecast-item {
+    display: grid;
+    grid-template-columns: minmax(30%, 1fr) minmax(30%, 1fr) minmax(30%, 1fr);
+    align-items: center;
+}
+
+.weather-forecast-day {
+    text-align: left;
+}
+
+.weather-forecast-temps {
+    text-align: right;
+}
+
+.weather-forecast-icon {
+    margin-bottom: -20px;
+    height: 60px;
+}
+
+@media (min-width: 768px) {
+    .weather-forecast-container {
+        padding-left: 1rem;
+    }
+}
