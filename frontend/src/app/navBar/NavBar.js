@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import SearchBar from '../../features/explore/exploreSearch/SearchBar.js';
+import UserNav from '../../features/login/userNav/UserNav';
 import './NavBar.css';
 
 export default function NavBar() {
@@ -13,6 +14,7 @@ export default function NavBar() {
                         </Link>
                         <p className='nav-title'>National<br></br>Park<br></br>Explorer</p>
                         <SearchBar />
+                        <UserNav />
                     </div>
             </div>
         </nav>
