@@ -1,23 +1,19 @@
 import { useState } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { selectFilter, setFilter } from '../../explore/exploreSlice.js';
 import './FilterSelector.css';
 
 
-export default function FilterSelector( { options, name, handleChange, filterTitle }) {
+export default function FilterSelector( { options, name, handleChange, filterTitle, newFilter, setNewFilter }) {
 
-    const dispatch = useDispatch();
-    const filter = useSelector(selectFilter);
     const [checkboxOpen, setCheckboxOpen] = useState(false);
 
     const clearFilter = () => {
-        dispatch(setFilter({...filter, [filterTitle]: []}))
+        setNewFilter({...newFilter, [filterTitle]: []});
     }
 
     return (
         <div className='checkbox-selector'>
-            {filter[filterTitle].length > 0 ? <button className='clear-filter-btn' onClick={clearFilter}>Clear</button> : <></>}
-            <button className='checkbox-header' onClick={() => setCheckboxOpen(checkboxOpen => !checkboxOpen)}>
+            {newFilter[filterTitle].length > 0 ? <button className='clear-filter-btn' onClick={clearFilter}>Clear</button> : <></>}
+            <button className='checkbox-header' type='button' onClick={() => setCheckboxOpen(checkboxOpen => !checkboxOpen)}>
                 {name} 
                 <i className={checkboxOpen ? 'fa-solid fa-minus' : 'fa-solid fa-plus'}></i>
             </button>
@@ -26,7 +22,7 @@ export default function FilterSelector( { options, name, handleChange, filterTit
                     {options.map((option, index) => {
                         return (
                             <label key={index} className='option' htmlFor={option.title}>
-                                <input className='checkbox' type="checkbox" name={option.title} value={option.value} onChange={handleChange} checked={filter[filterTitle].includes(option.value) ? true : false}></input>
+                                <input className='checkbox' type="checkbox" name={option.title} value={option.value} onChange={handleChange} checked={newFilter[filterTitle].includes(option.value) ? true : false}></input>
                                 <span className='checkbox-label'>{option.title}</span>
                             </label>
                         )
