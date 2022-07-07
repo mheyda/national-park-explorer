@@ -28,7 +28,7 @@ export default function Signup({
             </form>
             <p>
                 Already have an account?
-                <Link to={'/user/login'}>Log in</Link>.
+                <Link to={'/user/login'}> Log in</Link>
             </p>
         </main>
     );

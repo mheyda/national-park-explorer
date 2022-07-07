@@ -7,7 +7,7 @@ import Signup from './signup/Signup';
 
 export default function Authenticate() {
 
-    let { format } = useParams();
+    const { format } = useParams();
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [username, setUsername] = useState('');

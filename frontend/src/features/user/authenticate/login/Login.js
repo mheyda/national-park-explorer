@@ -22,7 +22,7 @@ export default function Login({
             </form>
             <p>
                 Don't have an account yet?
-                <Link to={'/user/signup'}>Sign up</Link>.
+                <Link to={'/user/signup'}> Sign up</Link>
             </p>
         </main>
     );
