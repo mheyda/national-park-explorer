@@ -7,7 +7,7 @@ import { useInView } from 'react-intersection-observer';
 export default function ExploreTiles( { parks } ) {
 
     const dispatch = useDispatch();
-    const intervalParksStatus = useSelector(state => state.parks.intervalParksStatus);
+    const intervalParksStatus = useSelector(state => state.explore.intervalParksStatus);
 
     const { ref, inView } = useInView({
         threshold: 0,
@@ -20,7 +20,7 @@ export default function ExploreTiles( { parks } ) {
                 dispatch(getNextParks());
             }
         }, 100)
-    }, [inView, dispatch])
+    }, [inView, dispatch, parks])
 
     if (parks && parks.length > 0) {
         return (

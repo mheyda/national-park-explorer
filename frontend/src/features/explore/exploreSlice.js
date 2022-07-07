@@ -1,6 +1,5 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 
-
 export const fetchFirstIntervalParks = createAsyncThunk('parks/fetchIntervalParks', async (options) => {
   const { limit } = options;
   const response = await fetch(`https://mheyda-server.herokuapp.com/getParks?start=0&limit=${limit}&sort=fullName&stateCode=`);
@@ -20,8 +19,8 @@ export const fetchAllParks = createAsyncThunk('parks/fetchAllParks', async () =>
   return data;
 })
 
-export const parksSlice = createSlice({
-  name: 'parks',
+export const exploreSlice = createSlice({
+  name: 'explore',
   initialState: {
     allParks: [],
     listParks: [],
@@ -147,15 +146,15 @@ export const parksSlice = createSlice({
   },
 });
 
-export const { setFilter, setSort, setQuery, setView, filterParks, getNextParks } = parksSlice.actions;
+export const { setFilter, setSort, setQuery, setView, filterParks, getNextParks } = exploreSlice.actions;
 
-export const selectAllParks = (state) => state.parks.allParks;
-export const selectMapParks = (state) => state.parks.mapParks;
-export const selectListParks = (state) => state.parks.listParks;
-export const selectInterval = (state) => state.parks.interval;
-export const selectSort = (state) => state.parks.sort;
-export const selectFilter = (state) => state.parks.filter;
-export const selectQuery = (state) => state.parks.query;
-export const selectView = (state) => state.parks.view;
+export const selectAllParks = (state) => state.explore.allParks;
+export const selectMapParks = (state) => state.explore.mapParks;
+export const selectListParks = (state) => state.explore.listParks;
+export const selectInterval = (state) => state.explore.interval;
+export const selectSort = (state) => state.explore.sort;
+export const selectFilter = (state) => state.explore.filter;
+export const selectQuery = (state) => state.explore.query;
+export const selectView = (state) => state.explore.view;
 
-export default parksSlice.reducer;
+export default exploreSlice.reducer;

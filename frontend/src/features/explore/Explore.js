@@ -34,7 +34,7 @@ export default function Explore() {
         if (allParks.length > 0) {
             dispatch(filterParks());
         }
-    }, [filter, sort, query, dispatch])
+    }, [filter, sort, query, dispatch, allParks.length])
 
     if (view === 'list') {
         return (

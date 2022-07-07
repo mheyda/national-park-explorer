@@ -82,7 +82,7 @@ export default function FilterPage({ setFiltersOpen }) {
                             Sort by
                             {newSort !== 'Alphabetical (A-Z)' ? <button className='clear-sort-btn' type='button' onClick={clearSort}>Clear</button> : <></>}
                         </p>
-                        <Select name={''} options={sortOptions} onChange={updateSort} clearSort={clearSort} />
+                        <Select name={''} options={sortOptions} defaultValue={sort} onChange={updateSort} clearSort={clearSort} />
                     </> 
                 : <></>}
                 <p className='filter-page-subheading'>Filter by</p>

@@ -17,7 +17,7 @@ function App() {
   useEffect(() => {
       dispatch(fetchAllParks());
       dispatch(fetchFirstIntervalParks({limit: interval}));
-  }, [])
+  }, [dispatch, interval])
 
   return (
     <BrowserRouter>
