@@ -4,10 +4,11 @@ from django.conf import settings
 from django.http import JsonResponse
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework import viewsets, filters
+from rest_framework import filters, permissions, status
 from rest_framework.permissions import IsAuthenticated
-from .serializers import UserSerializer
-from .models import User
+from rest_framework_simplejwt.views import TokenObtainPairView
+from .serializers import MyTokenObtainPairSerializer, CustomUserSerializer
+from rest_framework.views import APIView
 
 
 # Render home page
@@ -40,23 +41,26 @@ def getParks(request):
     parks = requests.get(f'https://developer.nps.gov/api/v1/parks?start={start}&limit={limit}&sort={sort}&stateCode={stateCode}&api_key={settings.NPS_API_KEY}').json()
     return Response(parks)
 
-# Users
-class UserViewSet(viewsets.ModelViewSet):
-    http_method_names = ['get']
-    serializer_class = UserSerializer
-    permission_classes = (IsAuthenticated,)
-    filter_backends = [filters.OrderingFilter]
-    ordering_fields = ['updated']
-    ordering = ['-updated']
 
-    def get_queryset(self):
-        if self.request.user.is_superuser:
-            return User.objects.all()
+class ObtainTokenPairWithClaims(TokenObtainPairView):
+    permission_classes = (permissions.AllowAny,)
+    serializer_class = MyTokenObtainPairSerializer
 
-    def get_object(self):
-        lookup_field_value = self.kwargs[self.lookup_field]
 
-        obj = User.objects.get(lookup_field_value)
-        self.check_object_permissions(self.request, obj)
+class CustomUserCreate(APIView):
+    permission_classes = (permissions.AllowAny,)
 
-        return obj
+    def post(self, request, format='json'):
+        serializer = CustomUserSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            if user:
+                json = serializer.data
+                return Response(json, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class HelloWorldView(APIView):
+
+    def get(self, request):
+        return Response(data={"hello":"world"}, status=status.HTTP_200_OK)
