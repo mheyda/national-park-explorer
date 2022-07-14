@@ -3,16 +3,18 @@ import { Link } from 'react-router-dom';
 
 
 export default function Login({ 
-        username,
-        setUsername, 
-        password,
-        setPassword,
-        handleLogin,
-    }) {
+    errorMessage,
+    username,
+    setUsername, 
+    password,
+    setPassword,
+    handleLogin,
+}) {
 
     return (
         <main>
             <h2>Log in</h2>
+            <p>{errorMessage}</p>
             <form onSubmit={handleLogin}>
                 <label>Username</label>
                 <input type='text' value={username} onChange={(e) => setUsername(e.target.value)} required />

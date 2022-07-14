@@ -1,19 +1,55 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 
+
 export const fetchFirstIntervalParks = createAsyncThunk('parks/fetchIntervalParks', async (options) => {
-  const { limit } = options;
-  const response = await fetch(`https://mheyda-server.herokuapp.com/getParks?start=0&limit=${limit}&sort=fullName&stateCode=`);
+  const { limit, tokens } = options;
+  //const response = await fetch(`https://mheyda-server.herokuapp.com/getParks?start=0&limit=${limit}&sort=fullName&stateCode=`);
   // For development
-  //const response = await fetch(`http://127.0.0.1:8000/getParks?start=${start}&limit=${limit}&sort=${sort}&stateCode=${stateCode}`);
+  const response = await fetch(`http://127.0.0.1:8000/getParks?start=0&limit=${limit}&sort=fullName&stateCode=`, {
+    method: 'POST', // *GET, POST, PUT, DELETE, etc.
+    mode: 'cors', // no-cors, *cors, same-origin
+    cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
+    credentials: 'same-origin', // include, *same-origin, omit
+    headers: {
+      'Authorization': `JWT ${tokens.access}`,
+      'Content-Type': 'application/json',
+      'accept': 'application/json',
+      //'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    redirect: 'follow', // manual, *follow, error
+    referrerPolicy: 'no-referrer', // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
+  });
+  if (!response.ok) {
+    console.log('Error: ' + response.status + ' ' + response.statusText);
+    throw Error(response.statusText);
+  }
   const json = await response.json();
   const data = await json.data;
   return data;
 })
 
-export const fetchAllParks = createAsyncThunk('parks/fetchAllParks', async () => {
-  const response = await fetch(`https://mheyda-server.herokuapp.com/getParks?start=0&limit=500&sort=fullName&stateCode=`);
+export const fetchAllParks = createAsyncThunk('parks/fetchAllParks', async (options) => {
+  const { tokens } = options;
+  //const response = await fetch(`https://mheyda-server.herokuapp.com/getParks?start=0&limit=500&sort=fullName&stateCode=`);
   // For development
-  //const response = await fetch(`http://127.0.0.1:8000/getParks?start=0&limit=500&sort=fullName&stateCode=`);
+  const response = await fetch(`http://127.0.0.1:8000/getParks?start=0&limit=500&sort=fullName&stateCode=`, {
+    method: 'POST', // *GET, POST, PUT, DELETE, etc.
+    mode: 'cors', // no-cors, *cors, same-origin
+    cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
+    credentials: 'same-origin', // include, *same-origin, omit
+    headers: {
+      'Authorization': `JWT ${tokens.access}`,
+      'Content-Type': 'application/json',
+      'accept': 'application/json',
+      //'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    redirect: 'follow', // manual, *follow, error
+    referrerPolicy: 'no-referrer', // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
+  });
+  if (!response.ok) {
+    console.log('Error: ' + response.status + ' ' + response.statusText);
+    throw Error(response.statusText);
+  }
   const json = await response.json();
   const data = await json.data;
   return data;
@@ -35,7 +71,7 @@ export const exploreSlice = createSlice({
     view: 'list',
     allParksStatus: 'idle',
     intervalParksStatus: 'idle',
-    error: null
+    error: null,
   },
   reducers: {
     setFilter: (state, action) => {
@@ -112,15 +148,13 @@ export const exploreSlice = createSlice({
     builder
       .addCase(fetchFirstIntervalParks.pending, (state) => {
         state.intervalParksStatus = 'loading';
+        state.error = null;
       })
       .addCase(fetchFirstIntervalParks.fulfilled, (state, action) => {
-        try {
-          state.intervalParksStatus = 'succeeded'
-          // Add fetched parks to list view
-          state.listParks = action.payload;
-        } catch(e) {
-          console.log("Error: " + e);
-        }
+        state.intervalParksStatus = 'succeeded'
+        // Add fetched parks to list view
+        state.listParks = action.payload;
+        state.error = null;
       })
       .addCase(fetchFirstIntervalParks.rejected, (state, action) => {
         state.intervalParksStatus = 'failed';
@@ -128,16 +162,14 @@ export const exploreSlice = createSlice({
       })
       .addCase(fetchAllParks.pending, (state) => {
         state.allParksStatus = 'loading';
+        state.error = null;
       })
       .addCase(fetchAllParks.fulfilled, (state, action) => {
-        try {
-          state.allParksStatus = 'succeeded'
-          // Add fetched parks to state depending on the current designation filter
-          state.allParks = action.payload;
-          state.mapParks = action.payload;
-        } catch(e) {
-          alert("Error: " + e);
-        }
+        state.allParksStatus = 'succeeded'
+        // Add fetched parks to state depending on the current designation filter
+        state.allParks = action.payload;
+        state.mapParks = action.payload;
+        state.error = null;
       })
       .addCase(fetchAllParks.rejected, (state, action) => {
         state.allParksStatus = 'failed';
@@ -153,6 +185,7 @@ export const selectMapParks = (state) => state.explore.mapParks;
 export const selectListParks = (state) => state.explore.listParks;
 export const selectInterval = (state) => state.explore.interval;
 export const selectSort = (state) => state.explore.sort;
+export const selectError = (state) => state.explore.error;
 export const selectFilter = (state) => state.explore.filter;
 export const selectQuery = (state) => state.explore.query;
 export const selectView = (state) => state.explore.view;

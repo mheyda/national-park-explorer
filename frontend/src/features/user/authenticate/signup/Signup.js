@@ -2,25 +2,27 @@ import './Signup.css';
 import { Link } from 'react-router-dom';
 
 export default function Signup({ 
-        firstName,
-        setFirstName,
-        lastName,
-        setLastName,
-        password,
-        setPassword,
-        showPassword,
-        setShowPassword,
-        handleSignup,
-    }) {
+    errorMessage,
+    email,
+    setEmail,
+    username,
+    setUsername,
+    password,
+    setPassword,
+    showPassword,
+    setShowPassword,
+    handleSignup,
+}) {
 
     return (
         <main>
             <h2>Sign up</h2>
+            <p>{errorMessage}</p>
             <form onSubmit={handleSignup}>
-                <label>First Name</label>
-                <input type='text' value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
-                <label>Last Name</label>
-                <input type='text' value={lastName} onChange={(e) => setLastName(e.target.value)} required />
+                <label>Email</label>
+                <input type='text' value={email} onChange={(e) => setEmail(e.target.value)} required />
+                <label>Username</label>
+                <input type='text' value={username} onChange={(e) => setUsername(e.target.value)} required />
                 <label>Password</label>
                 <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} required />
                 <button type='button' onClick={() => setShowPassword(prev => !prev)}>Show Password</button>

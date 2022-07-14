@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import SearchBar from '../../features/explore/exploreSearch/SearchBar.js';
-import UserNav from '../../features/login/userNav/UserNav';
+import UserNav from '../../features/user/userNav/UserNav';
 import './NavBar.css';
 
 export default function NavBar() {
