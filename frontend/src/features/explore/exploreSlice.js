@@ -2,57 +2,64 @@ import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 
 
 export const fetchFirstIntervalParks = createAsyncThunk('parks/fetchIntervalParks', async (options) => {
-  const { limit, tokens } = options;
-  //const response = await fetch(`https://mheyda-server.herokuapp.com/getParks?start=0&limit=${limit}&sort=fullName&stateCode=`);
-  // For development
-  const response = await fetch(`http://127.0.0.1:8000/getParks?start=0&limit=${limit}&sort=fullName&stateCode=`, {
-    method: 'POST', // *GET, POST, PUT, DELETE, etc.
-    mode: 'cors', // no-cors, *cors, same-origin
-    cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
-    credentials: 'same-origin', // include, *same-origin, omit
-    headers: {
-      'Authorization': `JWT ${tokens.access}`,
-      'Content-Type': 'application/json',
-      'accept': 'application/json',
-      //'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    redirect: 'follow', // manual, *follow, error
-    referrerPolicy: 'no-referrer', // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
-  });
-  if (!response.ok) {
-    console.log('Error: ' + response.status + ' ' + response.statusText);
+  const { limit } = options;
+  try {
+    //const response = await fetch(`https://mheyda-server.herokuapp.com/getParks?start=0&limit=${limit}&sort=fullName&stateCode=`);
+    // For development
+    const response = await fetch(`http://127.0.0.1:8000/getParks?start=0&limit=${limit}&sort=fullName&stateCode=`, {
+      method: 'POST', // *GET, POST, PUT, DELETE, etc.
+      mode: 'cors', // no-cors, *cors, same-origin
+      cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
+      credentials: 'same-origin', // include, *same-origin, omit
+      headers: {
+        'Content-Type': 'application/json',
+        'accept': 'application/json',
+      },
+      redirect: 'follow', // manual, *follow, error
+      referrerPolicy: 'no-referrer', // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
+    });
+
+    if (response.ok) {
+      const json = await response.json();
+      const data = await json.data;
+      return data;
+    }
+
     throw Error(response.statusText);
+  
+  } catch (error) {
+    console.log(error);
   }
-  const json = await response.json();
-  const data = await json.data;
-  return data;
 })
 
-export const fetchAllParks = createAsyncThunk('parks/fetchAllParks', async (options) => {
-  const { tokens } = options;
-  //const response = await fetch(`https://mheyda-server.herokuapp.com/getParks?start=0&limit=500&sort=fullName&stateCode=`);
-  // For development
-  const response = await fetch(`http://127.0.0.1:8000/getParks?start=0&limit=500&sort=fullName&stateCode=`, {
-    method: 'POST', // *GET, POST, PUT, DELETE, etc.
-    mode: 'cors', // no-cors, *cors, same-origin
-    cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
-    credentials: 'same-origin', // include, *same-origin, omit
-    headers: {
-      'Authorization': `JWT ${tokens.access}`,
-      'Content-Type': 'application/json',
-      'accept': 'application/json',
-      //'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    redirect: 'follow', // manual, *follow, error
-    referrerPolicy: 'no-referrer', // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
-  });
-  if (!response.ok) {
-    console.log('Error: ' + response.status + ' ' + response.statusText);
+export const fetchAllParks = createAsyncThunk('parks/fetchAllParks', async () => {
+  try {
+    //const response = await fetch(`https://mheyda-server.herokuapp.com/getParks?start=0&limit=500&sort=fullName&stateCode=`);
+    // For development
+    const response = await fetch(`http://127.0.0.1:8000/getParks?start=0&limit=500&sort=fullName&stateCode=`, {
+      method: 'POST', // *GET, POST, PUT, DELETE, etc.
+      mode: 'cors', // no-cors, *cors, same-origin
+      cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
+      credentials: 'same-origin', // include, *same-origin, omit
+      headers: {
+        'Content-Type': 'application/json',
+        'accept': 'application/json',
+      },
+      redirect: 'follow', // manual, *follow, error
+      referrerPolicy: 'no-referrer', // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
+    });
+
+    if (response.ok) {
+      const json = await response.json();
+      const data = await json.data;
+      return data;
+    }
+    
     throw Error(response.statusText);
+
+  } catch (error) {
+    console.log(error);
   }
-  const json = await response.json();
-  const data = await json.data;
-  return data;
 })
 
 export const exploreSlice = createSlice({

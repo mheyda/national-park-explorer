@@ -1,3 +1,9 @@
+/* Colors */
+:root {
+  --neutral-dark: #484848;
+  --neutral-light: lightgray;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;

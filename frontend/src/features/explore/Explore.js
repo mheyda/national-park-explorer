@@ -1,6 +1,20 @@
 import ExploreMap from './exploreMap/ExploreMap.js';
 import ExploreTiles from './exploreList/ExploreTiles.js';
-import { selectAllParks, selectListParks, selectMapParks, setQuery, selectError, selectQuery, selectSort, selectView, selectFilter, filterParks } from './exploreSlice.js';
+import { selectAllParks, 
+    selectListParks, 
+    selectMapParks, 
+    setQuery, 
+    selectInterval,
+    selectError, 
+    selectQuery, 
+    selectSort, 
+    selectView, 
+    selectFilter, 
+    filterParks,
+    fetchAllParks, 
+    fetchFirstIntervalParks, 
+} from './exploreSlice.js';
+import { selectTokens } from '../user/userSlice';
 import { useDispatch, useSelector } from 'react-redux';
 import ViewToggler from './ViewToggler.js';
 import FilterPage from './exploreFilter/FilterPage.js';
@@ -13,10 +27,12 @@ export default function Explore() {
     const allParks = useSelector(selectAllParks);
     const listParks = useSelector(selectListParks);
     const mapParks = useSelector(selectMapParks);
+    const interval = useSelector(selectInterval);
     const view = useSelector(selectView);
     const filter = useSelector(selectFilter);
     const query = useSelector(selectQuery);
     const sort = useSelector(selectSort);
+    const tokens = useSelector(selectTokens);
     const intervalParksStatus = useSelector(state => state.explore.intervalParksStatus);
     const error = useSelector(selectError);
     const dispatch = useDispatch();
@@ -31,6 +47,12 @@ export default function Explore() {
             return 1;
         }
     }).reduce((partialSum, a) => partialSum + a, 0)
+    
+    // Get all parks for map view and get first set of parks of list view
+    useEffect(() => {
+        dispatch(fetchAllParks());
+        dispatch(fetchFirstIntervalParks({limit: interval}));
+    }, [dispatch, interval])
 
     useEffect(() => {
         if (allParks && allParks.length > 0) {

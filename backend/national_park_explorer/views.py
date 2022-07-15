@@ -10,6 +10,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from .serializers import MyTokenObtainPairSerializer, CustomUserSerializer
 from .models import CustomUser
 from rest_framework.views import APIView
+from rest_framework_simplejwt.tokens import RefreshToken
 
 
 # Render home page
@@ -51,14 +52,12 @@ def getParks(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def user_info(request):
-    username = request.query_params.get("username")
-
     try:
-        user = CustomUser.objects.get(username=username)
         user_info = {
-            "email": user.email,
-            "first_name": user.first_name,
-            "last_name": user.last_name
+            "username": request.user.username,
+            "email": request.user.email,
+            "first_name": request.user.first_name,
+            "last_name": request.user.last_name
         }
         return Response(user_info)
 
@@ -76,6 +75,20 @@ def addToFavorites(request):
 class ObtainTokenPairWithClaims(TokenObtainPairView):
     permission_classes = (permissions.AllowAny,)
     serializer_class = MyTokenObtainPairSerializer
+
+
+class LogoutAndBlacklistRefreshTokenForUserView(APIView):
+    permission_classes = (permissions.AllowAny,)
+    authentication_classes = ()
+
+    def post(self, request):
+        try:
+            refresh_token = request.data['refresh']
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            return Response(status=status.HTTP_205_RESET_CONTENT)
+        except Exception:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 class CustomUserCreate(APIView):

@@ -1,7 +1,7 @@
 .navbar-container {
     background-color: white;
     z-index: 2;
-    border-bottom: 5px solid #484848;
+    border-bottom: 5px solid var(--neutral-dark);
     position: -webkit-sticky;
 	position: sticky;
 	top: 0;
