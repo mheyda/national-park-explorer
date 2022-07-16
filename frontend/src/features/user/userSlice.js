@@ -35,7 +35,7 @@ export const refreshTokens = createAsyncThunk('user/refreshTokens', async (optio
 export const userSlice = createSlice({
   name: 'user',
   initialState: {
-    loggedIn: localStorage.getItem('tokens') ? true : false,
+    loggedIn: localStorage.getItem('tokens') === null ? false : true,
     tokens: localStorage.getItem('tokens') ? JSON.parse(localStorage.getItem('tokens')) : {access: null, refresh: null},
     refreshTokensStatus: 'idle',
     error: null,

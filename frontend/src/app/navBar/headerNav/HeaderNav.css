@@ -1,0 +1,106 @@
+/* Header navigation */
+.header-nav-container {
+    background-color: white;
+    z-index: 2;
+    border-bottom: 5px solid var(--neutral-dark);
+    position: -webkit-sticky;
+	position: sticky;
+	top: 0;
+}
+
+.header-nav {
+    position: relative;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+}
+
+@media (min-width: 576px) {
+    .header-nav {
+        flex-wrap: wrap;
+        justify-content: space-between;
+    }
+}
+
+.header-nav-logo {
+    padding-right: 10px;
+}
+
+.header-nav-logo img {
+    height: 50px;
+}
+
+.header-nav-title {
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding-right: 20px;
+    margin-right: auto;
+    display: none;
+}
+
+@media (min-width: 576px) {
+    .header-nav-logo img {
+        height: 70px;
+    }
+    .header-nav-title {
+        font-size: 1rem;
+        display: block;
+    }
+}
+
+/* Toggler button */
+.header-nav-toggler {
+    display: none;
+    box-shadow: rgba(100, 100, 111, 0.2) 0px 5px 29px 0px;
+    border-radius: 1000px;
+    height: 3rem;
+    border: 1px solid var(--neutral-light);
+    padding: 10px;
+    align-items: center;
+    justify-content: center;
+    background-color: inherit;
+}
+
+@media (min-width: 768px) {
+    .header-nav-toggler {
+        display: flex;
+    }
+}
+
+.header-nav-toggler i {
+    padding: 0 5px;
+    color: var(--neutral-dark);
+}
+
+.header-nav-toggler > .fa-user {
+    font-size: 24px;
+}
+
+/* User navigation menu */
+.header-nav-content {
+    position: absolute;
+    bottom: 1rem;
+    transform: translateY(100%);
+    right: 2rem;
+    box-shadow: rgba(100, 100, 111, 0.2) 0px 5px 29px 0px;
+    border: 1px solid var(--neutral-light);
+    border-radius: 10px;
+    overflow: hidden;
+    background-color: white;
+    width: 200px;
+}
+
+.header-nav-link {
+    display: flex;
+    align-items: center;
+    background-color: inherit;
+    border: none;
+    width: 100%;
+    height: 3rem;
+    padding: 0 15px;
+}
+
+.header-nav-link:hover {
+    font-weight: 700;
+}

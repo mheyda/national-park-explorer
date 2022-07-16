@@ -1,41 +1,53 @@
-import { Link } from 'react-router-dom';
-import SearchBar from '../../features/explore/exploreSearch/SearchBar.js';
-import UserNav from '../../features/user/userNav/UserNav';
-import './NavBar.css';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import { selectLoggedIn } from '../../features/user/userSlice.js';
+import HeaderNav from './headerNav/HeaderNav.js';
+import FooterNav from './footerNav/FooterNav.js';
+
 
 export default function NavBar() {
     
+    const [userNavOpen, setUserNavOpen] = useState(false);
+    const loggedIn = useSelector(selectLoggedIn);
+    const navigate = useNavigate();
+
+    const logout = async () => {
+        const response = await fetch('http://127.0.0.1:8000/blacklist/', {
+            method: 'POST', // *GET, POST, PUT, DELETE, etc.
+            mode: 'cors', // no-cors, *cors, same-origin
+            cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
+            credentials: 'same-origin', // include, *same-origin, omit
+            headers: {
+                'Content-Type': 'application/json',
+                'accept': 'application/json'
+            },
+            redirect: 'follow', // manual, *follow, error
+            referrerPolicy: 'no-referrer', // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
+            body: JSON.stringify({
+                'refresh': JSON.parse(localStorage.getItem("tokens")).refresh
+            })
+        });
+
+        if (!response.ok) {
+            console.log(response.status + ": " + response.statusText)
+        } else {
+            localStorage.removeItem("tokens");
+            navigate('/user/login');
+            window.location.reload();
+        }
+        return;
+    }
+
+    const handleLogout = () => {
+        setUserNavOpen(false)
+        logout();
+    }
+
     return (
         <>
-            <nav className='header-nav-container'>
-                <div className='header-nav'>
-                    <Link className='nav-logo' to={'/'}>
-                        <img src={require('../../assets/images/nps-logo.png')} alt={'National Park Service Logo'} />
-                    </Link>
-                    <p className='nav-title'>National<br></br>Park<br></br>Explorer</p>
-                    <SearchBar />
-                    <UserNav />
-                </div>
-            </nav>
-            <nav className='footer-nav-container'>
-                <div className='footer-nav'>
-                    <Link to={'/'}>
-                        <i className="fa-solid fa-earth-americas"></i>
-                        <br></br>
-                        <span>Explore</span>
-                    </Link>
-                    <Link to={'/'}>
-                        <i className="fa-solid fa-heart"></i>
-                        <br></br>
-                        <span>Favorites</span>
-                    </Link>
-                    <Link to={'/'}>
-                        <i className="fa-solid fa-user"></i>
-                        <br></br>
-                        <span>Profile</span>
-                    </Link>
-                </div>
-            </nav>
+            <HeaderNav loggedIn={loggedIn} handleLogout={handleLogout} userNavOpen={userNavOpen} setUserNavOpen={setUserNavOpen} />
+            <FooterNav loggedIn={loggedIn} handleLogout={handleLogout} />
         </>
     );
 }

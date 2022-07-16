@@ -32,8 +32,8 @@ function App() {
         <Route path='/' element={<Explore />} />
         <Route path="/user" element={<User />} />
         <Route path="/user/:format" element={<Authenticate />} />
+        <Route path="/user/favorites" element={<Favorites />} />
         <Route path="/:parkFullName/:parkCode" element={<ExplorePark />} />
-        <Route path="/favorites" element={<Favorites />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
