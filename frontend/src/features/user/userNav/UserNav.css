@@ -2,6 +2,13 @@
 .user-nav {
     position: relative;
     background-color: white;
+    display: none;
+}
+
+@media (min-width: 768px) {
+    .user-nav {
+        display: block;
+    }
 }
 
 

@@ -10,7 +10,7 @@
 }
 
 
-@media (min-width: 992px) {
+@media (min-width: 768px) {
     .search-bar {
         width: 400px;
         position: absolute;

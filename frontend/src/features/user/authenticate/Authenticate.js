@@ -107,7 +107,9 @@ export default function Authenticate() {
                 username={username} 
                 setUsername={setUsername} 
                 password={password} 
-                setPassword={setPassword} 
+                setPassword={setPassword}
+                showPassword={showPassword} 
+                setShowPassword={setShowPassword} 
                 handleLogin={handleLogin} 
             />
         );

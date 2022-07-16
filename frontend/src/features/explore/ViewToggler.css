@@ -1,7 +1,7 @@
 
 .view-btn {
     position: fixed;
-    bottom: 7%;
+    bottom: 6rem;
     left: 50%;
     transform: translateX(-50%);
     color: white;
@@ -10,6 +10,12 @@
     border-radius: 1000px;
     padding: 15px 20px;
     transition: 0.1s;
+}
+
+@media (min-width: 768px) {
+    .view-btn {
+        bottom: 3rem;
+    }
 }
 
 .view-btn:hover {
