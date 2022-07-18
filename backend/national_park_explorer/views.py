@@ -19,12 +19,12 @@ def index(request):
 
 
 # 404 Error Page
-def handler404(request,exception):
+def handler404(request, exception):
     return render(request, '404.html', status=404)
 
 
 # 500 Error Page
-def handler500(request,exception):
+def handler500(request, exception):
     return render(request, '500.html', status=500)
 
 
@@ -57,7 +57,9 @@ def user_info(request):
             "username": request.user.username,
             "email": request.user.email,
             "first_name": request.user.first_name,
-            "last_name": request.user.last_name
+            "last_name": request.user.last_name,
+            "birthdate": request.user.birthdate,
+            "favorites": request.user.favorites
         }
         return Response(user_info)
 
@@ -65,11 +67,17 @@ def user_info(request):
         return Response(status=status)
 
 
-# Add park to user's list of favorites
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def addToFavorites(request):
-    return
+# API view for user to get and post requests for their favorite parks
+class favorites(APIView):
+    permission_classes = (permissions.AllowAny,) # (permissions.IsAuthenticated,)
+
+    def get(self, request):
+        favorites = request.user.favorites
+        return  Response(favorites, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        return
+
 
 
 class ObtainTokenPairWithClaims(TokenObtainPairView):

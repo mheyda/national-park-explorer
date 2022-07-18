@@ -14,7 +14,9 @@ export default function User() {
     const dispatch = useDispatch();
 
     const getUserInfo = async (tokens) => {
-        try{
+        try {
+            console.log("Access token: ");
+            console.log(tokens);
             const response = await fetch(`http://127.0.0.1:8000/user/info`, {
                 method: 'GET', // *GET, POST, PUT, DELETE, etc.
                 mode: 'cors', // no-cors, *cors, same-origin
@@ -33,29 +35,29 @@ export default function User() {
             if (response.ok) {
                 const userInfo = await response.json();
                 setUserInfo(userInfo);
+                console.log(userInfo)
                 return;
             }
 
             throw Error(response.statusText);
+            
         } catch (error) {
             console.log(error);
             navigate('/user/login');
         }
     }
 
-    // Refresh JWT tokens on refresh if the user has already logged in before, otherwise redirect to login page
+    // Check user authentication to access this page
     useEffect(() => {
-        if (tokens.refresh) {
-            dispatch(refreshTokens({prevTokens: tokens}));
-        } else {
-            navigate('/user/login');
-        }
+        dispatch(refreshTokens({prevTokens: tokens}));
     }, [dispatch]);
 
-    // Wait until JWT tokens have been refreshed, then get user info
+    // If user is authenticated, show them their favorite parks. Otherwise redirect to login page
     useEffect(() => {
-        if (refreshTokensStatus === 'succeeded' || refreshTokensStatus === 'failed') {
+        if (refreshTokensStatus === 'succeeded') {
             getUserInfo(tokens);
+        } else if (refreshTokensStatus === 'failed') {
+            navigate('/user/login');
         }
     }, [dispatch, tokens, refreshTokensStatus])
 

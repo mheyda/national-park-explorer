@@ -1,10 +1,11 @@
 import './Authenticate.css';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
-import { setTokens } from '../userSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import { selectTokens, setTokens, refreshTokens, selectRefreshTokensStatus } from '../userSlice';
 import Login from './login/Login';
 import Signup from './signup/Signup';
+import NotFound from '../../notFound/NotFound';
 
 
 export default function Authenticate() {
@@ -12,6 +13,11 @@ export default function Authenticate() {
     const { format } = useParams();
     const dispatch = useDispatch();
     const navigate = useNavigate();
+
+    const tokens = useSelector(selectTokens);
+    const refreshTokensStatus = useSelector(selectRefreshTokensStatus);
+    const [checkedAuth, setCheckedAuth] = useState(false);
+
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -88,8 +94,6 @@ export default function Authenticate() {
         } 
     }
 
-    
-
     const handleLogin = (e) => {
         e.preventDefault();
         authenticate();
@@ -100,7 +104,23 @@ export default function Authenticate() {
         signup();
     }
 
-    if (format === 'login') {
+    // Check user authentication
+    useEffect(() => {
+        dispatch(refreshTokens({prevTokens: tokens}));
+    }, [dispatch]);
+
+    // If user is authenticated, show their profile page. Otherwise allow them to login or signup
+    useEffect(() => {
+        if (refreshTokensStatus === 'succeeded') {
+            navigate('/user');
+        } else if (refreshTokensStatus === 'failed') {
+            setCheckedAuth(true);
+        }
+    }, [dispatch, tokens, refreshTokensStatus])
+
+    
+    if (format === 'login' && checkedAuth) {
+        // User wants to login and is not already logged in
         return (
             <Login 
                 errorMessage={errorMessage}
@@ -113,7 +133,8 @@ export default function Authenticate() {
                 handleLogin={handleLogin} 
             />
         );
-    } else {
+    } else if (format === 'signup' && checkedAuth) {
+        // User wants to sign up and is not currently logged in
         return (
             <Signup 
                 errorMessage={errorMessage}
@@ -128,5 +149,14 @@ export default function Authenticate() {
                 handleSignup={handleSignup}
             />
         );
+    } else if (checkedAuth) {
+        // URL does not match login or signup
+        return (
+            <NotFound />
+        )
+    } else {
+        return (
+            <main>Loading...</main>
+        )
     }
 }

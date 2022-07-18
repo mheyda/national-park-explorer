@@ -2,6 +2,16 @@ import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useSelector, useDispatch } from 'react-redux';
 import { selectTokens } from '../features/user/userSlice';
+import {
+  fetchAllParks,
+  fetchFirstIntervalParks,
+  filterParks,
+  selectAllParks, 
+  selectInterval,
+  selectQuery, 
+  selectSort, 
+  selectFilter, 
+} from '../features/explore/exploreSlice.js';
 import Explore from '../features/explore/Explore.js';
 import Authenticate from '../features/user/authenticate/Authenticate';
 import ExplorePark from '../features/explore/explorePark/ExplorePark';
@@ -16,13 +26,23 @@ function App() {
 
   const dispatch = useDispatch();
   const tokens = useSelector(selectTokens);
+  const allParks = useSelector(selectAllParks);
+  const interval = useSelector(selectInterval);
+  const filter = useSelector(selectFilter);
+  const query = useSelector(selectQuery);
+  const sort = useSelector(selectSort);
 
-  // Refresh JWT tokens on page load if user has signed in already
+  // Get all parks for map view and get first set of parks of list view
   useEffect(() => {
-    if (tokens.refresh) {
-      dispatch(refreshTokens({prevTokens: tokens}));
-    }
-  }, [dispatch]);
+    dispatch(fetchAllParks());
+    dispatch(fetchFirstIntervalParks({limit: interval}));
+  }, [dispatch, interval])
+
+  useEffect(() => {
+      if (allParks && allParks.length > 0) {
+          dispatch(filterParks());
+      }
+  }, [filter, sort, query, dispatch, allParks])
 
   return (
     <BrowserRouter>

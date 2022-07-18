@@ -1,7 +1,10 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+import { useNavigate } from 'react-router-dom';
 
-export const refreshTokens = createAsyncThunk('user/refreshTokens', async (options) => {
+
+export const refreshTokens = createAsyncThunk('user/refreshTokens', async (options, thunkAPI) => {
     const { prevTokens } = options;
+
     try {
       const response = await fetch('http://127.0.0.1:8000/token/refresh/', {
           method: 'POST', // *GET, POST, PUT, DELETE, etc.
@@ -24,10 +27,11 @@ export const refreshTokens = createAsyncThunk('user/refreshTokens', async (optio
           return newTokens;
       }
       
-      throw Error(response.statusText);
+      throw new Error(response.statusText);
 
     } catch (error) {
       console.log(error);
+      return thunkAPI.rejectWithValue('rejected');
     }
 })
 
@@ -56,6 +60,8 @@ export const userSlice = createSlice({
       })
       .addCase(refreshTokens.fulfilled, (state, action) => {
         state.refreshTokensStatus = 'succeeded'
+        console.log("succeeded")
+        console.log(action.payload)
         // Set tokens and logged in status
         localStorage.setItem('tokens', JSON.stringify(action.payload));
         state.tokens = action.payload;
@@ -64,6 +70,8 @@ export const userSlice = createSlice({
       .addCase(refreshTokens.rejected, (state, action) => {
         state.refreshTokensStatus = 'failed';
         state.error = action.error.message;
+        console.log("Failed to get tokens")
+        console.log(action.error.message);
       })
   },
 });
