@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { selectTokens, refreshTokens, selectRefreshTokensStatus } from '../user/userSlice';
 import { selectAllParks } from '../explore/exploreSlice';
-import _default from 'react-redux/es/components/connect';
+
 
 export default function Favorites() {
 

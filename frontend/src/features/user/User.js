@@ -8,6 +8,8 @@ import { selectTokens, refreshTokens, selectRefreshTokensStatus } from './userSl
 export default function User() {
 
     const [userInfo, setUserInfo] = useState({});
+    const [newUserInfo, setNewUserInfo] = useState(userInfo);
+    const [editingUserInfo, setEditingUserInfo] = useState(false);
     const tokens = useSelector(selectTokens);
     const refreshTokensStatus = useSelector(selectRefreshTokensStatus);
     const navigate = useNavigate();
@@ -35,12 +37,13 @@ export default function User() {
             if (response.ok) {
                 const userInfo = await response.json();
                 setUserInfo(userInfo);
+                setNewUserInfo(userInfo);
                 console.log(userInfo)
                 return;
             }
 
             throw Error(response.statusText);
-            
+
         } catch (error) {
             console.log(error);
             navigate('/user/login');
@@ -61,11 +64,78 @@ export default function User() {
         }
     }, [dispatch, tokens, refreshTokensStatus])
 
-    return (
-        <div>
-            {Object.values(userInfo).map(attribute => {
-                return <h1>{attribute}</h1>
-            })}
-        </div>
-    );
+    console.log(newUserInfo)
+    console.log(userInfo);
+
+    if (editingUserInfo) {
+        return (
+            <main>
+                <button onClick={() => {
+                        setEditingUserInfo(false);
+                        setNewUserInfo(userInfo);
+                    }}>
+                    Cancel
+                </button>
+                <button>Save</button>
+                <p>
+                    <label>
+                        <span>Username: </span>
+                        <input type='text' value={newUserInfo.username} disabled />
+                    </label>  
+                </p>
+                <p>
+                    <label>
+                        <span>Email Address: </span>
+                        <input type='text' value={newUserInfo.email} disabled />
+                    </label>
+                </p>
+                <p>
+                    <label>
+                        <span>First Name: </span>
+                        <input type='text' value={newUserInfo.first_name} onChange={(e) => setNewUserInfo({...newUserInfo, first_name: e.target.value})} />
+                    </label>
+                    <label>
+                        <span>Last Name: </span>
+                        <input type='text' value={newUserInfo.last_name} onChange={(e) => setNewUserInfo({...newUserInfo, last_name: e.target.value})} />
+                    </label>
+                </p>
+                <p>
+                    <label>
+                        <span>Birthdate: </span>
+                        <input type='text' value={newUserInfo.birthdate} onChange={(e) => setNewUserInfo({...newUserInfo, birthdate: e.target.value})} />
+                    </label>
+                </p>
+            </main>
+        );
+    } else {
+        return (
+            <main>
+                <button onClick={() => setEditingUserInfo(true)}>Edit</button>
+                <p>
+                    <label>
+                        <span>Username: </span>{userInfo.username}
+                    </label>        
+                </p>
+                <p>
+                    <label>
+                        <span>Email Address: </span>{userInfo.email}
+                    </label>   
+                </p>
+                <p>
+                    <label>
+                        <span>First Name: </span>{userInfo.first_name}
+                    </label>
+                    <label>
+                        <span>Last Name: </span>{userInfo.last_name}
+                    </label>
+                </p>
+                <p>
+                    <label>
+                        <span>Birthdate: </span>{userInfo.birthdate}
+                    </label>   
+                </p>
+            </main>
+        );
+    }
+    
 }
