@@ -3,7 +3,7 @@ import ManualSlideshow from '../../../common/slideshow/ManualSlideshow';
 import { useInView } from 'react-intersection-observer';
 
 
-export default function ExploreTile( { park } ) {
+export default function ExploreTile( { park, toggleFavorite } ) {
 
     let states = park.states.split(',').join(', ');
     const statesLength = park.states.split(',').length;
@@ -21,10 +21,10 @@ export default function ExploreTile( { park } ) {
 
     if (inView) {
         return (
-            <Link to={`${park.fullName}/${park.parkCode}`} onClick={() => {
-                sessionStorage.setItem('currentPark', JSON.stringify(park));
-            }}>
-                <li className='explore-tile' id={park.fullName} >
+            <li className='explore-tile' id={park.fullName} >
+                <Link to={`${park.fullName}/${park.parkCode}`} onClick={() => {
+                    sessionStorage.setItem('currentPark', JSON.stringify(park));
+                }}>
                     <div className='explore-tile-img-container'>
                         <div className='explore-tile-img'>
                             <ManualSlideshow images={park.images} />
@@ -34,8 +34,9 @@ export default function ExploreTile( { park } ) {
                         <p className='explore-tile-title'>{park.name}<br></br>{park.designation}</p>
                         <p className='explore-tile-states'>{states}</p>
                     </div>
-                </li>
-            </Link>
+                </Link>
+                <button onClick={toggleFavorite} value={park.id} className='park-toggle-favorite'><i class="fa-solid fa-heart"></i></button>
+            </li>
         );
     } else {
         return (

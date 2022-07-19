@@ -40,6 +40,10 @@ export default function Explore() {
         }
     }).reduce((partialSum, a) => partialSum + a, 0)
 
+    const toggleFavorite = (e) => {
+        console.log(e.target.parentElement.value)
+    }
+
     // If an error occured while fetching the parks
     if (error) {
         return (
@@ -73,7 +77,7 @@ export default function Explore() {
                         </div>
                         {filtersOpen ? <FilterPage setFiltersOpen={setFiltersOpen} /> : <></>}
                         <div className='explore'>
-                            <ExploreTiles parks={listParks} />
+                            <ExploreTiles toggleFavorite={toggleFavorite} parks={listParks} />
                         </div>
                         <ViewToggler />
                     </main>
@@ -96,7 +100,7 @@ export default function Explore() {
                                 Filter {filterCount > 0 ? `(${filterCount})` : ''}
                         </button>
                         {filtersOpen ? <FilterPage setFiltersOpen={setFiltersOpen} /> : <></>}
-                        <ExploreMap parks={mapParks} />
+                        <ExploreMap toggleFavorite={toggleFavorite} parks={mapParks} />
                         <ViewToggler />
                     </>
                 );

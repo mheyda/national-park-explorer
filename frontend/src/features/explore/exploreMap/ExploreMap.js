@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import ManualSlideshow from '../../../common/slideshow/ManualSlideshow';
 import './ExploreMap.css';
 
-export default function ExploreMap( { parks }) {
+export default function ExploreMap( { parks, toggleFavorite }) {
 
     return (
         <MapContainer className={'map-container'} center={[38, -97]} zoom={3} scrollWheelZoom={true} maxBounds={[[-90, -360], [90, 360]]} maxBoundsViscosity={1}>
@@ -22,8 +22,8 @@ export default function ExploreMap( { parks }) {
                 }
                 
                 return <Marker key={index} position={[park.latitude, park.longitude]} >
-                            <Link to={`${park.fullName}/${park.parkCode}`} onClick={() => sessionStorage.setItem('currentPark', JSON.stringify(park))}>
-                                <Popup className='popup-container' >
+                            <Popup className='popup-container' >
+                                <Link to={`${park.fullName}/${park.parkCode}`} onClick={() => sessionStorage.setItem('currentPark', JSON.stringify(park))}>
                                     <div className='popup-img-container'>
                                         <ManualSlideshow images={park.images} />
                                     </div>
@@ -31,8 +31,9 @@ export default function ExploreMap( { parks }) {
                                         <p className='popup-title'>{park.name}<br></br>{park.designation}</p>
                                         <p className='popup-states'>{states}</p>
                                     </div>
-                                </Popup>
-                            </Link>
+                                </Link>
+                                <button onClick={toggleFavorite} value={park.id} className='park-toggle-favorite'><i class="fa-solid fa-heart"></i></button>
+                            </Popup>
                         </Marker>;
             })
             : <></>}
