@@ -1,5 +1,6 @@
 from django.shortcuts import render
 import requests
+import json
 from django.conf import settings
 from django.http import JsonResponse
 from rest_framework.decorators import api_view, permission_classes
@@ -68,9 +69,8 @@ def user_info(request):
 
 # API view for user to get and post requests for their favorite parks
 @api_view(['GET', 'POST'])
-#@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated])
 def favorites(request):
-    print(request.method)
     
     if request.method == 'GET':
         try:
@@ -85,19 +85,21 @@ def favorites(request):
     if request.method == 'POST':
         try:
             # Get the id of the park the user wants to add or remove, get user object, and get user's favorites
-            park_id = request.data.get("park_id")
-            user = CustomUser.objects.get(username = 'marshallheyda')#request.user)
+            park_id = request.data
+            user = CustomUser.objects.get(username = request.user)
             favorites_list = Favorite.objects.filter(user = user).values_list('park_id', flat=True)
 
             # If the user already has the park in their favorites, remove it
             for favorite in favorites_list:
                 if favorite == park_id:
                     Favorite.objects.filter(user = user, park_id = park_id).delete()
+                    favorites_list = Favorite.objects.filter(user = user).values_list('park_id', flat=True)
                     return Response(favorites_list, status=status.HTTP_200_OK)
             
             # Otherwise add to user's favorites
             Favorite.objects.create(user = user, park_id = park_id)
-            return Response(park_id, status=status.HTTP_200_OK)
+            favorites_list = Favorite.objects.filter(user = user).values_list('park_id', flat=True)
+            return Response(favorites_list, status=status.HTTP_200_OK)
 
         except Exception:
             return Response(status=status.HTTP_400_BAD_REQUEST)
