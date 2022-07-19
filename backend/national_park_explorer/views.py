@@ -8,7 +8,7 @@ from rest_framework import filters, permissions, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .serializers import MyTokenObtainPairSerializer, CustomUserSerializer
-from .models import CustomUser
+from .models import CustomUser, Favorite
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -59,25 +59,48 @@ def user_info(request):
             "first_name": request.user.first_name,
             "last_name": request.user.last_name,
             "birthdate": request.user.birthdate,
-            "favorites": request.user.favorites
         }
-        return Response(user_info)
+        return Response(user_info, status=status.HTTP_200_OK)
 
     except:
         return Response(status=status)
 
 
 # API view for user to get and post requests for their favorite parks
-class favorites(APIView):
-    permission_classes = (permissions.AllowAny,) # (permissions.IsAuthenticated,)
+@api_view(['GET', 'POST'])
+#@permission_classes([IsAuthenticated])
+def favorites(request):
+    print(request.method)
+    
+    if request.method == 'GET':
+        try:
+            # Find user's favorites and return them
+            user = CustomUser.objects.get(username = request.user)
+            favorites_list = Favorite.objects.filter(user = user).values_list('park_id', flat=True)
+            return Response(favorites_list, status=status.HTTP_200_OK)
 
-    def get(self, request):
-        favorites = request.user.favorites
-        return  Response(favorites, status=status.HTTP_200_OK)
+        except Exception:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 
-    def post(self, request):
-        return
+    if request.method == 'POST':
+        try:
+            # Get the id of the park the user wants to add or remove, get user object, and get user's favorites
+            park_id = request.data.get("park_id")
+            user = CustomUser.objects.get(username = 'marshallheyda')#request.user)
+            favorites_list = Favorite.objects.filter(user = user).values_list('park_id', flat=True)
 
+            # If the user already has the park in their favorites, remove it
+            for favorite in favorites_list:
+                if favorite == park_id:
+                    Favorite.objects.filter(user = user, park_id = park_id).delete()
+                    return Response(favorites_list, status=status.HTTP_200_OK)
+            
+            # Otherwise add to user's favorites
+            Favorite.objects.create(user = user, park_id = park_id)
+            return Response(park_id, status=status.HTTP_200_OK)
+
+        except Exception:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 
 
 class ObtainTokenPairWithClaims(TokenObtainPairView):
