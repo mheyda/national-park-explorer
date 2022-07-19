@@ -32,7 +32,7 @@ export default function ExploreMap( { parks, toggleFavorite }) {
                                         <p className='popup-states'>{states}</p>
                                     </div>
                                 </Link>
-                                <button onClick={toggleFavorite} value={park.id} className='park-toggle-favorite'><i class="fa-solid fa-heart"></i></button>
+                                <button onClick={toggleFavorite} value={park.id} className='park-toggle-favorite'><i className="fa-solid fa-heart"></i></button>
                             </Popup>
                         </Marker>;
             })
