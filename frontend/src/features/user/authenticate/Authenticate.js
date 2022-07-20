@@ -6,6 +6,7 @@ import { selectTokens, setTokens, refreshTokens, selectRefreshTokensStatus } fro
 import Login from './login/Login';
 import Signup from './signup/Signup';
 import NotFound from '../../notFound/NotFound';
+import makeRequest from '../../../makeRequest';
 
 
 export default function Authenticate() {
@@ -22,7 +23,9 @@ export default function Authenticate() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
-    const [errorMessage, setErrorMessage] = useState('');
+    const [emailError, setEmailError] = useState('');
+    const [usernameError, setUsernameError] = useState('');
+    const [passwordError, setPasswordError] = useState('');
 
     const authenticate = async () => {
         try {
@@ -52,7 +55,7 @@ export default function Authenticate() {
                 return;
             }
 
-            setErrorMessage('Invalid username or password.');
+            //setErrorMessage('Invalid username or password.');
             setPassword('');
             throw Error("Invalid credentials");
 
@@ -85,7 +88,7 @@ export default function Authenticate() {
                 authenticate();
             }
 
-            setErrorMessage('Something went wrong. Please try again.');
+            //setErrorMessage('Something went wrong. Please try again.');
             setPassword('');
             throw Error(response.statusText);
             
@@ -94,14 +97,47 @@ export default function Authenticate() {
         } 
     }
 
-    const handleLogin = (e) => {
+    const handleLogin = async (e) => {
         e.preventDefault();
-        authenticate();
+
+        const login = await makeRequest({ 
+            urlExtension: 'token/obtain/', 
+            method: 'POST', 
+            body: {
+                'username': username,
+                'password': password
+            }
+        });
+        if (login.error) {
+            console.log(login.data)
+            setUsernameError(login.data.detail);
+            setPassword('');
+        } else {
+            dispatch(setTokens(login.data));
+            navigate('/user');
+        }
     }
 
-    const handleSignup = (e) => {
+    const handleSignup = async (e) => {
         e.preventDefault();
-        signup();
+        const signup = await makeRequest({ 
+            urlExtension: 'user/create/', 
+            method: 'POST', 
+            body: {
+                'username': username,
+                'password': password,
+                'email': email
+            }
+        });
+
+        if (signup.error) {
+            setEmailError(signup.data.email);
+            setUsernameError(signup.data.detail);
+            setPasswordError(signup.data.password);
+            setPassword('');
+        } else {
+            handleLogin(e);
+        }
     }
 
     // Check user authentication
@@ -123,7 +159,8 @@ export default function Authenticate() {
         // User wants to login and is not already logged in
         return (
             <Login 
-                errorMessage={errorMessage}
+                usernameError={usernameError}
+                passwordError={passwordError}
                 username={username} 
                 setUsername={setUsername} 
                 password={password} 
@@ -137,7 +174,9 @@ export default function Authenticate() {
         // User wants to sign up and is not currently logged in
         return (
             <Signup 
-                errorMessage={errorMessage}
+                emailError={emailError}
+                usernameError={usernameError}
+                passwordError={passwordError}
                 email={email}
                 setEmail={setEmail}
                 username={username}

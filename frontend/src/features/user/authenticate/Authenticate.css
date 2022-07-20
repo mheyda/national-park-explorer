@@ -31,6 +31,16 @@
     padding-bottom: 5px;
 }
 
+.authenticate-form-field p {
+    text-align: left;
+    color: red;
+    padding: 5px 0;
+}
+
+.authenticate-form-input-container {
+    position: relative;
+}
+
 .authenticate-form-input {
     width: 100%;
     height: 2rem;

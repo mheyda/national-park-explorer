@@ -16,8 +16,9 @@ import FilterPage from './exploreFilter/FilterPage.js';
 import { useEffect, useState } from 'react';
 import './Explore.css';
 import { useNavigate } from 'react-router-dom';
-import { selectTokens, refreshTokens, selectRefreshTokensStatus } from '../user/userSlice.js';
 import { setFavorites } from '../favorites/favoritesSlice.js';
+import makeRequest from '../../makeRequest.js';
+
 
 export default function Explore() {
     
@@ -32,46 +33,9 @@ export default function Explore() {
     const error = useSelector(selectError);
     const dispatch = useDispatch();
     const navigate = useNavigate();
-    const tokens = useSelector(selectTokens);
-    const refreshTokensStatus = useSelector(selectRefreshTokensStatus);
 
+    // Get number of filters and sorts currently applied
     const sortCount = (sort !== 'Alphabetical (A-Z)' ? 1 : 0);
-
-    const favoritesAPI = async (options) => {
-        const { method, tokens, parkId } = options;
-
-        try {
-            const response = await fetch(`http://127.0.0.1:8000/user/favorites/`, {
-                method: method, // *GET, POST, PUT, DELETE, etc.
-                mode: 'cors', // no-cors, *cors, same-origin
-                cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
-                credentials: 'same-origin', // include, *same-origin, omit
-                headers: {
-                    'Authorization': `JWT ${tokens.access}`,
-                    'Content-Type': 'application/json',
-                    'accept': 'application/json'
-                },
-                redirect: 'follow', // manual, *follow, error
-                referrerPolicy: 'no-referrer', // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
-                body: JSON.stringify(parkId),
-            });
-            
-
-            if (response.ok) {
-                const userFavorites = await response.json();
-                dispatch(setFavorites(userFavorites));
-                console.log(userFavorites)
-                return;
-            }
-
-            throw Error(response.statusText);
-            
-        } catch (error) {
-            console.log(error);
-            navigate('/user/login');
-        }
-    }
-
     const filterCount = Object.values(filter).map(value => {
         if (value.length === 0) {
             return 0;
@@ -81,23 +45,27 @@ export default function Explore() {
         }
     }).reduce((partialSum, a) => partialSum + a, 0)
 
-    const toggleFavorite = (parkId) => {
-        favoritesAPI({method: 'POST', tokens: tokens, parkId: parkId});
+    // Make request to toggle the "favorite" status of a park for a user. If unsuccessful, redirect to login page.
+    const toggleFavorite = async (parkId) => {
+        const updatedFavorites = await makeRequest({ urlExtension: 'user/favorites/', method: 'POST', body: parkId });
+        if (updatedFavorites.error) {
+            navigate('/user/login')
+        } else {
+            dispatch(setFavorites(updatedFavorites.data));
+        }
     }
 
-    // Check user authentication to access this page
+    // Make request to get user's favorites. If they're not logged in, do nothing
     useEffect(() => {
-        dispatch(refreshTokens({prevTokens: tokens}));
-        // eslint-disable-next-line
-    }, [dispatch]);
-
-    // If user is authenticated, show them their favorite parks. Otherwise redirect to login page
-    useEffect(() => {
-        if (refreshTokensStatus === 'succeeded') {
-            favoritesAPI({method: 'GET', tokens: tokens})
+        const getFavorites = async () => {
+            const favorites = await makeRequest({ urlExtension: 'user/favorites/', method: 'GET', body: null });
+            if (!favorites.error) {
+                dispatch(setFavorites(favorites.data));
+            }
         }
-        // eslint-disable-next-line
-    }, [dispatch, navigate, tokens, refreshTokensStatus])
+        getFavorites();
+    }, [])
+
 
     // If an error occured while fetching the parks
     if (error) {
