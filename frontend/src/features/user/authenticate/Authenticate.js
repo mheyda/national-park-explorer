@@ -154,9 +154,5 @@ export default function Authenticate() {
         return (
             <NotFound />
         )
-    } else {
-        return (
-            <main>Loading...</main>
-        )
     }
 }

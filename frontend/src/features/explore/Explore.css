@@ -150,7 +150,9 @@
     -webkit-text-stroke-color: white;
 }
 
-
+.park-toggle-favorite > i.selected {
+    color: crimson;
+}
 
 @media (min-width: 576px) {
     .explore-tiles {

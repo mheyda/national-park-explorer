@@ -8,6 +8,7 @@ import { selectTokens, refreshTokens, selectRefreshTokensStatus } from './userSl
 export default function User() {
 
     const [userInfo, setUserInfo] = useState({});
+    const [checkedAuth, setCheckedAuth] = useState(false);
     const [newUserInfo, setNewUserInfo] = useState(userInfo);
     const [editingUserInfo, setEditingUserInfo] = useState(false);
     const tokens = useSelector(selectTokens);
@@ -59,15 +60,13 @@ export default function User() {
     useEffect(() => {
         if (refreshTokensStatus === 'succeeded') {
             getUserInfo(tokens);
+            setCheckedAuth(true);
         } else if (refreshTokensStatus === 'failed') {
             navigate('/user/login');
         }
     }, [dispatch, tokens, refreshTokensStatus])
 
-    console.log(newUserInfo)
-    console.log(userInfo);
-
-    if (editingUserInfo) {
+    if (checkedAuth && editingUserInfo) {
         return (
             <main>
                 <button onClick={() => {
@@ -107,7 +106,7 @@ export default function User() {
                 </p>
             </main>
         );
-    } else {
+    } else if (checkedAuth) {
         return (
             <main>
                 <button onClick={() => setEditingUserInfo(true)}>Edit</button>

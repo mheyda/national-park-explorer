@@ -3,12 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { selectTokens, refreshTokens, selectRefreshTokensStatus } from '../user/userSlice';
 import { selectAllParks } from '../explore/exploreSlice';
+import { selectFavorites, setFavorites } from './favoritesSlice';
 
 
 export default function Favorites() {
 
     const allParks = useSelector(selectAllParks);
-    const [favorites, setFavorites] = useState([]);
+    const favorites = useSelector(selectFavorites);
     const tokens = useSelector(selectTokens);
     const refreshTokensStatus = useSelector(selectRefreshTokensStatus);
     const navigate = useNavigate();
@@ -36,7 +37,7 @@ export default function Favorites() {
 
             if (response.ok) {
                 const userFavorites = await response.json();
-                setFavorites(userFavorites);
+                dispatch(setFavorites(userFavorites));
                 console.log(userFavorites)
                 return;
             }
@@ -49,9 +50,11 @@ export default function Favorites() {
         }
     }
 
+
     // Check user authentication to access this page
     useEffect(() => {
         dispatch(refreshTokens({prevTokens: tokens}));
+        // eslint-disable-next-line
     }, [dispatch]);
 
     // If user is authenticated, show them their favorite parks. Otherwise redirect to login page
@@ -61,24 +64,21 @@ export default function Favorites() {
         } else if (refreshTokensStatus === 'failed') {
             navigate('/user/login');
         }
-    }, [dispatch, tokens, refreshTokensStatus])
-
-    const add = () => {
-        favoritesAPI({method: 'POST', tokens: tokens, parkId: 'F58C6D24-8D10-4573-9826-65D42B8B83AD'})
-    }
+        // eslint-disable-next-line
+    }, [dispatch, navigate, tokens, refreshTokensStatus])
 
     return (
         <main className='my-parks-container'>
-            <button onClick={add}>Add</button>
             {allParks.map(park => {
                 if (favorites && favorites.length > 0) {
                     return favorites.map((favoriteId, index) => {
                         if (favoriteId === park.id) {
                             return <p key={index}>{park.fullName}</p>;
                         }
-                        return;
+                        return null;
                     })
                 }
+                return null;
             })}
         </main>
     );

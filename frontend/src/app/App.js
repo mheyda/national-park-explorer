@@ -44,6 +44,7 @@ function App() {
       }
   }, [filter, sort, query, dispatch, allParks])
 
+
   return (
     <BrowserRouter>
       <NavBar />

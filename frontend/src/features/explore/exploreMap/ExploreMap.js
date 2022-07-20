@@ -1,9 +1,13 @@
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import ManualSlideshow from '../../../common/slideshow/ManualSlideshow';
+import { selectFavorites } from '../../favorites/favoritesSlice';
 import './ExploreMap.css';
 
 export default function ExploreMap( { parks, toggleFavorite }) {
+
+    const favorites = useSelector(selectFavorites);
 
     return (
         <MapContainer className={'map-container'} center={[38, -97]} zoom={3} scrollWheelZoom={true} maxBounds={[[-90, -360], [90, 360]]} maxBoundsViscosity={1}>
@@ -32,7 +36,11 @@ export default function ExploreMap( { parks, toggleFavorite }) {
                                         <p className='popup-states'>{states}</p>
                                     </div>
                                 </Link>
-                                <button onClick={toggleFavorite} value={park.id} className='park-toggle-favorite'><i className="fa-solid fa-heart"></i></button>
+                                <button onClick={() => toggleFavorite(park.id)} className='park-toggle-favorite'>
+                                    {favorites && favorites.includes(park.id) ?
+                                    <i className="fa-solid fa-heart selected"></i> :
+                                    <i className="fa-solid fa-heart"></i>}
+                                </button>
                             </Popup>
                         </Marker>;
             })

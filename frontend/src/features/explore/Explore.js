@@ -13,10 +13,11 @@ import {
 import { useDispatch, useSelector } from 'react-redux';
 import ViewToggler from './ViewToggler.js';
 import FilterPage from './exploreFilter/FilterPage.js';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import './Explore.css';
 import { useNavigate } from 'react-router-dom';
-import { selectTokens } from '../user/userSlice.js';
+import { selectTokens, refreshTokens, selectRefreshTokensStatus } from '../user/userSlice.js';
+import { setFavorites } from '../favorites/favoritesSlice.js';
 
 export default function Explore() {
     
@@ -32,6 +33,7 @@ export default function Explore() {
     const dispatch = useDispatch();
     const navigate = useNavigate();
     const tokens = useSelector(selectTokens);
+    const refreshTokensStatus = useSelector(selectRefreshTokensStatus);
 
     const sortCount = (sort !== 'Alphabetical (A-Z)' ? 1 : 0);
 
@@ -57,6 +59,7 @@ export default function Explore() {
 
             if (response.ok) {
                 const userFavorites = await response.json();
+                dispatch(setFavorites(userFavorites));
                 console.log(userFavorites)
                 return;
             }
@@ -65,7 +68,7 @@ export default function Explore() {
             
         } catch (error) {
             console.log(error);
-            navigate('/');
+            navigate('/user/login');
         }
     }
 
@@ -78,9 +81,23 @@ export default function Explore() {
         }
     }).reduce((partialSum, a) => partialSum + a, 0)
 
-    const toggleFavorite = (e) => {
-        favoritesAPI({method: 'POST', tokens: tokens, parkId: e.target.parentElement.value});
+    const toggleFavorite = (parkId) => {
+        favoritesAPI({method: 'POST', tokens: tokens, parkId: parkId});
     }
+
+    // Check user authentication to access this page
+    useEffect(() => {
+        dispatch(refreshTokens({prevTokens: tokens}));
+        // eslint-disable-next-line
+    }, [dispatch]);
+
+    // If user is authenticated, show them their favorite parks. Otherwise redirect to login page
+    useEffect(() => {
+        if (refreshTokensStatus === 'succeeded') {
+            favoritesAPI({method: 'GET', tokens: tokens})
+        }
+        // eslint-disable-next-line
+    }, [dispatch, navigate, tokens, refreshTokensStatus])
 
     // If an error occured while fetching the parks
     if (error) {
