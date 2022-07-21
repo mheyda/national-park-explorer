@@ -17,7 +17,7 @@ import { useEffect, useState } from 'react';
 import './Explore.css';
 import { useNavigate } from 'react-router-dom';
 import { setFavorites } from '../favorites/favoritesSlice.js';
-import makeRequest from '../../makeRequest.js';
+import { makeRequest } from '../../makeRequest';
 
 
 export default function Explore() {
@@ -58,7 +58,12 @@ export default function Explore() {
     // Make request to get user's favorites. If they're not logged in, do nothing
     useEffect(() => {
         const getFavorites = async () => {
-            const favorites = await makeRequest({ urlExtension: 'user/favorites/', method: 'GET', body: null });
+            const favorites = await makeRequest({ 
+                urlExtension: 'user/favorites/', 
+                method: 'GET', 
+                body: null,
+                authRequired: true,
+            });
             if (!favorites.error) {
                 dispatch(setFavorites(favorites.data));
             }

@@ -30,6 +30,7 @@ export default function HeaderNav({ loggedIn, handleLogout, userNavOpen, setUser
                         </>
                         :
                         <>
+                            <Link onClick={() => setUserNavOpen(false)} className='header-nav-link' to={'/'}>Explore</Link>
                             <Link onClick={() => setUserNavOpen(false)} className='header-nav-link' to={'user/signup'}>Sign up</Link>
                             <Link onClick={() => setUserNavOpen(false)} className='header-nav-link' to={'user/login'}>Log in</Link>
                         </>}

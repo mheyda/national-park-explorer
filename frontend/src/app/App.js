@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useSelector, useDispatch } from 'react-redux';
-import { selectTokens } from '../features/user/userSlice';
 import {
   fetchAllParks,
   fetchFirstIntervalParks,
@@ -19,13 +18,11 @@ import Favorites from '../features/favorites/Favorites';
 import User from '../features/user/User';
 import NavBar from './navBar/NavBar';
 import NotFound from '../features/notFound/NotFound';
-import { refreshTokens } from '../features/user/userSlice';
 import './App.css';
 
 function App() {
 
   const dispatch = useDispatch();
-  const tokens = useSelector(selectTokens);
   const allParks = useSelector(selectAllParks);
   const interval = useSelector(selectInterval);
   const filter = useSelector(selectFilter);

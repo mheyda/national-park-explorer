@@ -1,47 +1,38 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
-import { selectLoggedIn } from '../../features/user/userSlice.js';
+import { useEffect, useState } from 'react';
 import HeaderNav from './headerNav/HeaderNav.js';
 import FooterNav from './footerNav/FooterNav.js';
+import { makeRequest, refreshTokens } from '../../makeRequest.js';
 
 
 export default function NavBar() {
     
     const [userNavOpen, setUserNavOpen] = useState(false);
-    const loggedIn = useSelector(selectLoggedIn);
-    const navigate = useNavigate();
+    const [loggedIn, setLoggedIn] = useState(false);
 
-    const logout = async () => {
-        const response = await fetch('http://127.0.0.1:8000/blacklist/', {
-            method: 'POST', // *GET, POST, PUT, DELETE, etc.
-            mode: 'cors', // no-cors, *cors, same-origin
-            cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
-            credentials: 'same-origin', // include, *same-origin, omit
-            headers: {
-                'Content-Type': 'application/json',
-                'accept': 'application/json'
-            },
-            redirect: 'follow', // manual, *follow, error
-            referrerPolicy: 'no-referrer', // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
-            body: JSON.stringify({
+    // Check user authentication
+    useEffect(() => {
+        const checkAuth = async () => {
+            const loggedIn = await refreshTokens();
+            setLoggedIn(loggedIn);
+        }
+        checkAuth();
+    }, []);
+
+    const handleLogout = async () => {
+        const logout = await makeRequest({
+            urlExtension: 'blacklist/',
+            method: 'POST',
+            body: {
                 'refresh': JSON.parse(localStorage.getItem("tokens")).refresh
-            })
-        });
-
-        if (!response.ok) {
-            console.log(response.status + ": " + response.statusText)
+            },
+            authRequired: false,
+        })
+        if (logout.error) {
+            alert('Sorry! Something went wrong.');
         } else {
             localStorage.removeItem("tokens");
-            navigate('/user/login');
-            window.location.reload();
+            window.location.href = '/user/login';
         }
-        return;
-    }
-
-    const handleLogout = () => {
-        setUserNavOpen(false)
-        logout();
     }
 
     return (

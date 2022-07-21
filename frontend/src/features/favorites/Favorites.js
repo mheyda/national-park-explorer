@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { selectAllParks } from '../explore/exploreSlice';
 import { selectFavorites, setFavorites } from './favoritesSlice';
-import makeRequest from '../../makeRequest';
+import { makeRequest } from '../../makeRequest';
 
 
 export default function Favorites() {
@@ -16,7 +16,12 @@ export default function Favorites() {
     // Make request to get user's favorites. If not successful, redirect to login page.
     useEffect(() => {
         const getFavorites = async () => {
-            const favorites = await makeRequest({ urlExtension: 'user/favorites/', method: 'GET', body: null });
+            const favorites = await makeRequest({ urlExtension: 
+                'user/favorites/', 
+                method: 'GET', 
+                body: null,
+                authRequired: true,
+            });
             if (favorites.error) {
                 navigate('/user/login')
             } else {
