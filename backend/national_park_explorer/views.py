@@ -86,6 +86,9 @@ def favorites(request):
         try:
             # Get the id of the park the user wants to add or remove, get user object, and get user's favorites
             park_id = request.data
+            if not park_id:
+                raise ValueError('Data must not be empty.')
+                
             user = CustomUser.objects.get(username = request.user)
             favorites_list = Favorite.objects.filter(user = user).values_list('park_id', flat=True)
 
