@@ -5,8 +5,8 @@
     padding-bottom: 12vh;
 }
 
-/* Filter bar list */
-.filter-bar-list {
+/* Filter bar */
+.filter-bar {
     display: flex;
     align-items: center;
 }
@@ -84,6 +84,7 @@
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(100%, 1fr));
     grid-gap: 2rem;
+    padding-top: 1rem;
 }
 
 .explore-tile {
@@ -121,6 +122,10 @@
     display: grid;
     grid-template-columns: 75% 25%;
     font-weight: 600;
+}
+
+.explore-tile-title {
+    text-align: left;
 }
 
 .explore-tile-states {

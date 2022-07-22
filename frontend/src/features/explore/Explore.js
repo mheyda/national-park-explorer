@@ -16,8 +16,7 @@ import FilterPage from './exploreFilter/FilterPage.js';
 import { useEffect, useState } from 'react';
 import './Explore.css';
 import { useNavigate } from 'react-router-dom';
-import { setFavorites } from '../favorites/favoritesSlice.js';
-import { makeRequest } from '../../makeRequest';
+import { getFavorites, setToggleStatus, selectToggleStatus } from '../favorites/favoritesSlice.js';
 
 
 export default function Explore() {
@@ -29,8 +28,9 @@ export default function Explore() {
     const filter = useSelector(selectFilter);
     const query = useSelector(selectQuery);
     const sort = useSelector(selectSort);
-    const intervalParksStatus = useSelector(state => state.explore.intervalParksStatus);
+    const parksStatus = useSelector(state => state.explore.parksStatus);
     const error = useSelector(selectError);
+    const toggleStatus = useSelector(selectToggleStatus);
     const dispatch = useDispatch();
     const navigate = useNavigate();
 
@@ -45,32 +45,18 @@ export default function Explore() {
         }
     }).reduce((partialSum, a) => partialSum + a, 0)
 
-    // Make request to toggle the "favorite" status of a park for a user. If unsuccessful, redirect to login page.
-    const toggleFavorite = async (parkId) => {
-        const updatedFavorites = await makeRequest({ urlExtension: 'user/favorites/', method: 'POST', body: parkId });
-        if (updatedFavorites.error) {
-            navigate('/user/login')
-        } else {
-            dispatch(setFavorites(updatedFavorites.data));
-        }
-    }
-
-    // Make request to get user's favorites. If they're not logged in, do nothing
+    // Make request to get user's favorites.
     useEffect(() => {
-        const getFavorites = async () => {
-            const favorites = await makeRequest({ 
-                urlExtension: 'user/favorites/', 
-                method: 'GET', 
-                body: null,
-                authRequired: true,
-            });
-            if (!favorites.error) {
-                dispatch(setFavorites(favorites.data));
-            }
-        }
-        getFavorites();
+        dispatch(getFavorites());
     }, [])
 
+    // If there was an error toggling a park, redirect to login page
+    useEffect(() => {
+        if (toggleStatus === 'failed') {
+            navigate('/user/login/');
+            dispatch(setToggleStatus('idle'));
+        }
+    }, [toggleStatus])
 
     // If an error occured while fetching the parks
     if (error) {
@@ -85,7 +71,7 @@ export default function Explore() {
             if (view === 'list') {
                 return (
                     <main className='explore-container'>
-                        <div className='filter-bar-list'>
+                        <div className='filter-bar'>
                             {query.length > 0 && mapParks.length > 0
                             ?   <p className='search-result-string'>{mapParks.length} search results for "{query}".
                                     <br></br>
@@ -104,9 +90,7 @@ export default function Explore() {
                             
                         </div>
                         {filtersOpen ? <FilterPage setFiltersOpen={setFiltersOpen} /> : <></>}
-                        <div className='explore'>
-                            <ExploreTiles toggleFavorite={toggleFavorite} parks={listParks} />
-                        </div>
+                        <ExploreTiles parks={listParks} />
                         <ViewToggler />
                     </main>
                 );
@@ -128,18 +112,18 @@ export default function Explore() {
                                 Filter {filterCount > 0 ? `(${filterCount})` : ''}
                         </button>
                         {filtersOpen ? <FilterPage setFiltersOpen={setFiltersOpen} /> : <></>}
-                        <ExploreMap toggleFavorite={toggleFavorite} parks={mapParks} />
+                        <ExploreMap parks={mapParks} />
                         <ViewToggler />
                     </>
                 );
             }
         }
-        else if (intervalParksStatus === 'idle') {
+        else if (parksStatus === 'idle' || parksStatus === 'loading') {
             return (
                 <main>Loading parks...</main>
             );
         }
-        else if (intervalParksStatus === 'success') {
+        else if (parksStatus === 'succeeded') {
             return (
                 <main>Sorry! Nothing matched your search.</main>
             );

@@ -1,12 +1,13 @@
 import { Link } from 'react-router-dom';
 import ManualSlideshow from '../../../common/slideshow/ManualSlideshow';
 import { useInView } from 'react-intersection-observer';
-import { selectFavorites } from '../../favorites/favoritesSlice';
-import { useSelector } from 'react-redux';
+import { selectFavorites, toggleFavorite } from '../../favorites/favoritesSlice';
+import { useSelector, useDispatch } from 'react-redux';
 
 
-export default function ExploreTile( { park, toggleFavorite } ) {
+export default function ExploreTile( { park } ) {
 
+    const dispatch = useDispatch();
     let states = park.states.split(',').join(', ');
     const statesLength = park.states.split(',').length;
     const favorites = useSelector(selectFavorites);
@@ -25,7 +26,7 @@ export default function ExploreTile( { park, toggleFavorite } ) {
     if (inView) {
         return (
             <li className='explore-tile' id={park.fullName} >
-                <Link to={`${park.fullName}/${park.parkCode}`} onClick={() => {
+                <Link to={`/${park.fullName}/${park.parkCode}`} onClick={() => {
                     sessionStorage.setItem('currentPark', JSON.stringify(park));
                 }}>
                     <div className='explore-tile-img-container'>
@@ -38,7 +39,7 @@ export default function ExploreTile( { park, toggleFavorite } ) {
                         <p className='explore-tile-states'>{states}</p>
                     </div>
                 </Link>
-                <button onClick={() => toggleFavorite(park.id)} className='park-toggle-favorite'>
+                <button onClick={() => dispatch(toggleFavorite({id: park.id}))} className='park-toggle-favorite'>
                     {favorites && favorites.includes(park.id) ?
                     <i className="fa-solid fa-heart selected"></i> :
                     <i className="fa-solid fa-heart"></i>}

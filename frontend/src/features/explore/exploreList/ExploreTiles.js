@@ -4,7 +4,7 @@ import { useDispatch } from 'react-redux';
 import { getNextParks } from '../exploreSlice';
 import { useInView } from 'react-intersection-observer';
 
-export default function ExploreTiles( { parks, toggleFavorite } ) {
+export default function ExploreTiles( { parks } ) {
 
     const dispatch = useDispatch();
 
@@ -25,7 +25,7 @@ export default function ExploreTiles( { parks, toggleFavorite } ) {
         <>
             <ul className='explore-tiles'>
                 {parks.map((park, index) => {
-                    return <ExploreTile key={index} toggleFavorite={toggleFavorite} park={park} />
+                    return <ExploreTile key={index} park={park} />
                 })}
             </ul>
             <div ref={ref} >{/* End of list... get more park tiles */}</div>

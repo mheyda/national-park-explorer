@@ -2,8 +2,7 @@ import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useSelector, useDispatch } from 'react-redux';
 import {
-  fetchAllParks,
-  fetchFirstIntervalParks,
+  fetchParks,
   filterParks,
   selectAllParks, 
   selectInterval,
@@ -29,12 +28,12 @@ function App() {
   const query = useSelector(selectQuery);
   const sort = useSelector(selectSort);
 
-  // Get all parks for map view and get first set of parks of list view
+  // Fetch parks
   useEffect(() => {
-    dispatch(fetchAllParks());
-    dispatch(fetchFirstIntervalParks({limit: interval}));
+    dispatch(fetchParks());
   }, [dispatch, interval])
 
+  // Re-filter parks whenever the filter, sort, or query changes
   useEffect(() => {
       if (allParks && allParks.length > 0) {
           dispatch(filterParks());

@@ -1,65 +1,22 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+import { makeRequest } from '../../makeRequest';
 
 
-export const fetchFirstIntervalParks = createAsyncThunk('parks/fetchIntervalParks', async (options) => {
-  const { limit } = options;
-  try {
-    //const response = await fetch(`https://mheyda-server.herokuapp.com/getParks?start=0&limit=${limit}&sort=fullName&stateCode=`);
-    // For development
-    const response = await fetch(`http://127.0.0.1:8000/getParks?start=0&limit=${limit}&sort=fullName&stateCode=`, {
-      method: 'GET', // *GET, POST, PUT, DELETE, etc.
-      mode: 'cors', // no-cors, *cors, same-origin
-      cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
-      credentials: 'same-origin', // include, *same-origin, omit
-      headers: {
-        'Content-Type': 'application/json',
-        'accept': 'application/json',
-      },
-      redirect: 'follow', // manual, *follow, error
-      referrerPolicy: 'no-referrer', // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
-    });
-
-    if (response.ok) {
-      const json = await response.json();
-      const data = await json.data;
-      return data;
-    }
-
-    throw Error(response.statusText);
+export const fetchParks = createAsyncThunk('parks/fetchAllParks', async (options, { rejectWithValue }) => {
   
-  } catch (error) {
-    console.log(error);
+  const parks = await makeRequest({
+    urlExtension: 'getParks?start=0&limit=500&sort=fullName&stateCode=',
+    method: 'GET',
+    body: null,
+    authRequired: false,
+  })
+
+  if (parks.error) {
+    return rejectWithValue(parks.error);
+  } else {
+    return parks.data.data;
   }
-})
 
-export const fetchAllParks = createAsyncThunk('parks/fetchAllParks', async () => {
-  try {
-    //const response = await fetch(`https://mheyda-server.herokuapp.com/getParks?start=0&limit=500&sort=fullName&stateCode=`);
-    // For development
-    const response = await fetch(`http://127.0.0.1:8000/getParks?start=0&limit=500&sort=fullName&stateCode=`, {
-      method: 'GET', // *GET, POST, PUT, DELETE, etc.
-      mode: 'cors', // no-cors, *cors, same-origin
-      cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
-      credentials: 'same-origin', // include, *same-origin, omit
-      headers: {
-        'Content-Type': 'application/json',
-        'accept': 'application/json',
-      },
-      redirect: 'follow', // manual, *follow, error
-      referrerPolicy: 'no-referrer', // no-referrer, *no-referrer-when-downgrade, origin, origin-when-cross-origin, same-origin, strict-origin, strict-origin-when-cross-origin, unsafe-url
-    });
-
-    if (response.ok) {
-      const json = await response.json();
-      const data = await json.data;
-      return data;
-    }
-    
-    throw Error(response.statusText);
-
-  } catch (error) {
-    console.log(error);
-  }
 })
 
 export const exploreSlice = createSlice({
@@ -76,8 +33,7 @@ export const exploreSlice = createSlice({
     },
     query: '',
     view: 'list',
-    allParksStatus: 'idle',
-    intervalParksStatus: 'idle',
+    parksStatus: 'idle',
     error: null,
   },
   reducers: {
@@ -153,33 +109,20 @@ export const exploreSlice = createSlice({
   },
   extraReducers(builder) {
     builder
-      .addCase(fetchFirstIntervalParks.pending, (state) => {
-        state.intervalParksStatus = 'loading';
+      .addCase(fetchParks.pending, (state) => {
+        state.parksStatus = 'loading';
         state.error = null;
       })
-      .addCase(fetchFirstIntervalParks.fulfilled, (state, action) => {
-        state.intervalParksStatus = 'succeeded'
-        // Add fetched parks to list view
-        state.listParks = action.payload;
-        state.error = null;
-      })
-      .addCase(fetchFirstIntervalParks.rejected, (state, action) => {
-        state.intervalParksStatus = 'failed';
-        state.error = action.error.message;
-      })
-      .addCase(fetchAllParks.pending, (state) => {
-        state.allParksStatus = 'loading';
-        state.error = null;
-      })
-      .addCase(fetchAllParks.fulfilled, (state, action) => {
-        state.allParksStatus = 'succeeded'
+      .addCase(fetchParks.fulfilled, (state, action) => {
+        state.parksStatus = 'succeeded'
         // Add fetched parks to state depending on the current designation filter
         state.allParks = action.payload;
         state.mapParks = action.payload;
+        state.listParks = action.payload.slice(0, state.interval);
         state.error = null;
       })
-      .addCase(fetchAllParks.rejected, (state, action) => {
-        state.allParksStatus = 'failed';
+      .addCase(fetchParks.rejected, (state, action) => {
+        state.parksStatus = 'failed';
         state.error = action.error.message;
       })
   },
