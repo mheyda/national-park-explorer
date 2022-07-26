@@ -36,7 +36,7 @@ NPS_API_KEY = env.str('NPS_API_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['localhost', 'mheyda-server.herokuapp.com']
+ALLOWED_HOSTS = ['localhost', 'mheyda-server.herokuapp.com', 'mheyda-server-test.herokuapp.com']
 
 
 # Application definition
