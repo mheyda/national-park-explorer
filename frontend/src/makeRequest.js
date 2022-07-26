@@ -4,12 +4,10 @@ let authorization = null;
 
 export const makeRequest = async (options) => {
     const { urlExtension, method, body, authRequired} = options;
-    console.log(authRequired)
-    console.log(urlExtension)
+
     if (authRequired) {
         await refreshTokens();
         authorization = localStorage.getItem('tokens') ? `JWT ${JSON.parse(localStorage.getItem('tokens')).access}` : null;
-        console.log("refreshed")
     }
 
     const response = await fetch((baseUrl + urlExtension), {

@@ -41,8 +41,8 @@ export default function Favorites() {
     }, [favoriteIds, allParks])
 
     return (
-        <main className='favorites-main'>
-            <h2>Favorites</h2>
+        <main>
+            <h2 className='favorites-title'>Favorites</h2>
             <ul className='explore-tiles'>
                 {favoriteParks.map((park, index) => {
                     return <ExploreTile key={index} park={park}  />

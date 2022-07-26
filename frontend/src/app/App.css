@@ -1,8 +1,9 @@
-/* Colors */
 :root {
+  /* Color Variables */
   --neutral-dark: #484848;
   --neutral-light: #d0d0d0;
 }
+
 
 * {
   box-sizing: border-box;

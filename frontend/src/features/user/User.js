@@ -32,73 +32,96 @@ export default function User() {
         getUserInfo();
     }, [])
 
+    const handleEdit = async (e) => {
+        e.preventDefault();
+        const response = await makeRequest({
+            urlExtension: 'user/info/',
+            method: 'PUT',
+            body: newUserInfo,
+            authRequired: true,
+        });
+
+        if (response.error) {
+            navigate('/user/login');
+        } else {
+            setUserInfo(response.data);
+            setNewUserInfo(response.data);
+            setEditingUserInfo(false);
+        }
+    }
+
     if (checkedAuth && editingUserInfo) {
         return (
-            <main>
-                <button onClick={() => {
-                        setEditingUserInfo(false);
-                        setNewUserInfo(userInfo);
-                    }}>
-                    Cancel
-                </button>
-                <button>Save</button>
-                <p>
-                    <label>
-                        <span>Username: </span>
-                        <input type='text' value={newUserInfo.username} disabled />
-                    </label>  
-                </p>
-                <p>
-                    <label>
-                        <span>Email Address: </span>
-                        <input type='text' value={newUserInfo.email} disabled />
-                    </label>
-                </p>
-                <p>
-                    <label>
-                        <span>First Name: </span>
-                        <input type='text' value={newUserInfo.first_name} onChange={(e) => setNewUserInfo({...newUserInfo, first_name: e.target.value})} />
-                    </label>
-                    <label>
-                        <span>Last Name: </span>
-                        <input type='text' value={newUserInfo.last_name} onChange={(e) => setNewUserInfo({...newUserInfo, last_name: e.target.value})} />
-                    </label>
-                </p>
-                <p>
-                    <label>
-                        <span>Birthdate: </span>
-                        <input type='text' value={newUserInfo.birthdate} onChange={(e) => setNewUserInfo({...newUserInfo, birthdate: e.target.value})} />
-                    </label>
-                </p>
+            <main className='user-main'>
+                <h2 className='user-title'>My Profile</h2>
+                <form onSubmit={handleEdit}>
+                    <section className='user-content'>
+                        <label className='user-field'>
+                            <div className='user-field-title'>Username</div>
+                            <div className='user-field-content'><input className='user-field-edit' type='text' value={newUserInfo.username} disabled /></div>
+                        </label>        
+                        <label className='user-field'>
+                            <div className='user-field-title'>Email Address</div>
+                            <div className='user-field-content'><input className='user-field-edit' type='text' value={newUserInfo.email} disabled /></div>
+                        </label> 
+                        <label className='user-field'>
+                            <div className='user-field-title'>First Name</div>
+                            <div className='user-field-content'><input className='user-field-edit' type='text' value={newUserInfo.first_name} onChange={(e) => setNewUserInfo({...newUserInfo, first_name: e.target.value})} /></div>
+                        </label>
+                        <label className='user-field'>
+                            <div className='user-field-title'>Last Name</div>
+                            <div className='user-field-content'><input className='user-field-edit' type='text' value={newUserInfo.last_name} onChange={(e) => setNewUserInfo({...newUserInfo, last_name: e.target.value})} /></div>
+                        </label>
+                        <label className='user-field'>
+                            <div className='user-field-title'>Birthdate</div>
+                            <div className='user-field-content'><input className='user-field-edit' type='text' value={newUserInfo.birthdate} onChange={(e) => setNewUserInfo({...newUserInfo, birthdate: e.target.value})} /></div>
+                        </label>
+                    </section>
+                    <div className='user-edit-btns'>
+                        <button className='user-edit-btn' type='submit'>
+                            Save
+                        </button>
+                        <button className='user-edit-btn' onClick={() => {
+                                setEditingUserInfo(false);
+                                setNewUserInfo(userInfo);
+                            }}>
+                            Cancel
+                        </button>
+                    </div>
+                </form>
             </main>
         );
     } else if (checkedAuth) {
         return (
-            <main>
-                <button onClick={() => setEditingUserInfo(true)}>Edit</button>
-                <p>
-                    <label>
-                        <span>Username: </span>{userInfo.username}
-                    </label>        
-                </p>
-                <p>
-                    <label>
-                        <span>Email Address: </span>{userInfo.email}
-                    </label>   
-                </p>
-                <p>
-                    <label>
-                        <span>First Name: </span>{userInfo.first_name}
-                    </label>
-                    <label>
-                        <span>Last Name: </span>{userInfo.last_name}
-                    </label>
-                </p>
-                <p>
-                    <label>
-                        <span>Birthdate: </span>{userInfo.birthdate}
-                    </label>   
-                </p>
+            <main className='user-main'>
+                <h2 className='user-title'>My Profile</h2>
+                <section className='user-content'>
+                        <label className='user-field'>
+                            <div className='user-field-title'>Username</div>
+                            <div className='user-field-content'>{userInfo.username ? userInfo.username : 'N/A'}</div>
+                        </label>        
+                        <label className='user-field'>
+                            <div className='user-field-title'>Email Address</div>
+                            <div className='user-field-content'>{userInfo.email ? userInfo.email : 'N/A'}</div>
+                        </label> 
+                        <label className='user-field'>
+                            <div className='user-field-title'>First Name</div>
+                            <div className='user-field-content'>{userInfo.first_name ? userInfo.first_name : 'N/A'}</div>
+                        </label>
+                        <label className='user-field'>
+                            <div className='user-field-title'>Last Name</div>
+                            <div className='user-field-content'>{userInfo.last_name ? userInfo.last_name : 'N/A'}</div>
+                        </label>
+                        <label className='user-field'>
+                            <div className='user-field-title'>Birthdate</div>
+                            <div className='user-field-content'>{userInfo.birthdate ? userInfo.birthdate : 'N/A'}</div>
+                        </label>
+                </section>
+                <div className='user-edit-btns'>
+                    <button className='user-edit-btn' onClick={() => setEditingUserInfo(true)}>
+                        Edit
+                    </button>
+                </div>
             </main>
         );
     }

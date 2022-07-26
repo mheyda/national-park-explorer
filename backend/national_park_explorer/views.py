@@ -50,21 +50,43 @@ def getParks(request):
 
 
 # Get user information
-@api_view(['GET'])
+@api_view(['GET', 'PUT'])
 @permission_classes([IsAuthenticated])
 def user_info(request):
-    try:
-        user_info = {
-            "username": request.user.username,
-            "email": request.user.email,
-            "first_name": request.user.first_name,
-            "last_name": request.user.last_name,
-            "birthdate": request.user.birthdate,
-        }
-        return Response(user_info, status=status.HTTP_200_OK)
+    
+    if request.method == 'GET':
+        try:
+            user_info = {
+                "username": request.user.username,
+                "email": request.user.email,
+                "first_name": request.user.first_name,
+                "last_name": request.user.last_name,
+                "birthdate": request.user.birthdate,
+            }
+            return Response(user_info, status=status.HTTP_200_OK)
 
-    except:
-        return Response(status=status)
+        except:
+            return Response(status=status)
+    if request.method == 'PUT':
+        try:
+            new_info = request.data
+            user = CustomUser.objects.get(username = request.user)
+
+            for key, value in new_info.items():
+                setattr(user, key, value)
+            user.save()
+
+            user_info = {
+                "username": user.username,
+                "email": user.email,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "birthdate": user.birthdate,
+            }
+
+            return Response(user_info, status=status.HTTP_200_OK)
+        except:
+            return Response(status=status)
 
 
 # API view for user to get and post requests for their favorite parks
