@@ -50,7 +50,7 @@ export default function Signup({
                     </div>
                     {passwordErrorComponent}
                 </label>
-                <input type='submit' value='Sign up' />
+                <button type='submit'>Sign up</button>
             </form>
             <p className='authenticate-toggle-format'>
                 <span>Already have an account? </span>

@@ -32,6 +32,8 @@ button:hover {
 
 select, input[type='text'], button {
   font-size: 1rem;
+  font-weight: normal;
+  color: inherit;
 }
 
 select:hover {
