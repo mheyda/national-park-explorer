@@ -1,0 +1,36 @@
+/* Footer navigation */
+.footer-nav-container {
+    background-color: white;
+    z-index: 1;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+}
+
+@media (min-width: 768px) {
+    .footer-nav-container {
+        display: none;
+    }
+}
+
+.footer-nav {
+    display: flex;
+    justify-content: space-evenly;
+    align-items: center;
+    text-align: center;
+    padding: 1rem 0;
+}
+
+.footer-nav i {
+    color: black;
+    font-size: 24px;
+}
+
+.footer-nav-link {
+    border: none;
+    background-color: inherit;
+}
+
+.footer-nav span {
+    font-size: 0.9rem;
+}

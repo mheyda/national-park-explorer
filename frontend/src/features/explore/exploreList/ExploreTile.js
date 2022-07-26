@@ -1,12 +1,16 @@
 import { Link } from 'react-router-dom';
 import ManualSlideshow from '../../../common/slideshow/ManualSlideshow';
 import { useInView } from 'react-intersection-observer';
+import { selectFavorites, toggleFavorite } from '../../favorites/favoritesSlice';
+import { useSelector, useDispatch } from 'react-redux';
 
 
 export default function ExploreTile( { park } ) {
 
+    const dispatch = useDispatch();
     let states = park.states.split(',').join(', ');
     const statesLength = park.states.split(',').length;
+    const favorites = useSelector(selectFavorites);
 
     if (statesLength > 2) {
         states = states.split(',').slice(0, 3).join(', ') + ', & More'
@@ -21,10 +25,10 @@ export default function ExploreTile( { park } ) {
 
     if (inView) {
         return (
-            <Link to={`${park.fullName}/${park.parkCode}`} onClick={() => {
-                sessionStorage.setItem('currentPark', JSON.stringify(park));
-            }}>
-                <li className='explore-tile' id={park.fullName} >
+            <li className='explore-tile' id={park.fullName} >
+                <Link to={`/${park.fullName}/${park.parkCode}`} onClick={() => {
+                    sessionStorage.setItem('currentPark', JSON.stringify(park));
+                }}>
                     <div className='explore-tile-img-container'>
                         <div className='explore-tile-img'>
                             <ManualSlideshow images={park.images} />
@@ -34,8 +38,13 @@ export default function ExploreTile( { park } ) {
                         <p className='explore-tile-title'>{park.name}<br></br>{park.designation}</p>
                         <p className='explore-tile-states'>{states}</p>
                     </div>
-                </li>
-            </Link>
+                </Link>
+                <button onClick={() => dispatch(toggleFavorite({id: park.id}))} className='park-toggle-favorite'>
+                    {favorites && favorites.includes(park.id) ?
+                    <i className="fa-solid fa-heart selected"></i> :
+                    <i className="fa-solid fa-heart"></i>}
+                </button>
+            </li>
         );
     } else {
         return (

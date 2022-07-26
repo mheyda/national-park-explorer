@@ -1,3 +1,10 @@
+:root {
+  /* Color Variables */
+  --neutral-dark: #484848;
+  --neutral-light: #d0d0d0;
+}
+
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -25,6 +32,8 @@ button:hover {
 
 select, input[type='text'], button {
   font-size: 1rem;
+  font-weight: normal;
+  color: inherit;
 }
 
 select:hover {
@@ -36,7 +45,7 @@ a {
   text-decoration: none;
 }
 
-main, .navbar {
+main, .header-nav {
   max-width: 1200px;
   margin-left: auto;
   margin-right: auto;
@@ -45,7 +54,7 @@ main, .navbar {
 }
 
 main {
-  padding: 1rem 1rem 2rem 1rem;
+  padding: 1rem 1rem 6rem 1rem;
 }
 
 strong {
@@ -54,9 +63,10 @@ strong {
 
 @media (min-width: 576px) {
   main {
-    padding: 1rem 2rem 2rem 2rem;
+    padding-left: 2rem;
+    padding-right: 2rem;
   }
-  .navbar {
+  .header-nav {
     padding-left: 2rem;
     padding-right: 2rem;
   }
@@ -65,4 +75,8 @@ strong {
 h1, h2, h3, h4, h5, h6 {
   position: relative;
   font-weight: 600;
+}
+
+.underline {
+  text-decoration: underline;
 }

@@ -1,0 +1,71 @@
+.authenticate-main {
+    max-width: 800px;
+    padding-top: 3rem;
+    text-align: center;
+}
+
+.authenticate-form button[type='submit'] {
+    background-color: black;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 1000px;
+    font-size: 1rem;
+    font-weight: 600;
+    box-shadow: rgb(100 100 111 / 20%) 0px 5px 29px 0px;
+    cursor: pointer;
+    margin: 1rem;
+}
+
+.authenticate-form-field {
+    position: relative;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 350px;
+    margin: 0.75rem auto;
+}
+
+.authenticate-form-field span {
+    float: left;
+    font-weight: 600;
+    padding-bottom: 5px;
+}
+
+.authenticate-form-field p {
+    text-align: left;
+    color: red;
+    padding: 5px 0;
+}
+
+.authenticate-form-input-container {
+    position: relative;
+}
+
+.authenticate-form-input {
+    width: 100%;
+    height: 2rem;
+    box-shadow: rgb(100 100 111 / 20%) 0px 5px 29px 0px;
+    border: 1px solid var(--neutral-light);
+    border-radius: 10px;
+    padding: 0 10px;
+    font-size: 1rem;
+}
+
+.authenticate-form-input.password {
+    padding-right: 35px;
+}
+
+.authenticate-show-password {
+    position: absolute;
+    height: 2rem;
+    bottom: 0;
+    margin-top: auto;
+    margin-bottom: auto;
+    right: 10px;
+    background-color: transparent;
+    border: none;
+}
+
+.authenticate-toggle-format {
+    margin-top: 2rem;
+}

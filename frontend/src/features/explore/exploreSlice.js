@@ -1,22 +1,22 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+import { makeRequest } from '../../makeRequest';
 
-export const fetchFirstIntervalParks = createAsyncThunk('parks/fetchIntervalParks', async (options) => {
-  const { limit } = options;
-  const response = await fetch(`https://mheyda-server.herokuapp.com/getParks?start=0&limit=${limit}&sort=fullName&stateCode=`);
-  // For development
-  //const response = await fetch(`http://127.0.0.1:8000/getParks?start=${start}&limit=${limit}&sort=${sort}&stateCode=${stateCode}`);
-  const json = await response.json();
-  const data = await json.data;
-  return data;
-})
 
-export const fetchAllParks = createAsyncThunk('parks/fetchAllParks', async () => {
-  const response = await fetch(`https://mheyda-server.herokuapp.com/getParks?start=0&limit=500&sort=fullName&stateCode=`);
-  // For development
-  //const response = await fetch(`http://127.0.0.1:8000/getParks?start=0&limit=500&sort=fullName&stateCode=`);
-  const json = await response.json();
-  const data = await json.data;
-  return data;
+export const fetchParks = createAsyncThunk('parks/fetchAllParks', async (options, { rejectWithValue }) => {
+  
+  const parks = await makeRequest({
+    urlExtension: 'getParks?start=0&limit=500&sort=fullName&stateCode=',
+    method: 'GET',
+    body: null,
+    authRequired: false,
+  })
+
+  if (parks.error) {
+    return rejectWithValue(parks.error);
+  } else {
+    return parks.data.data;
+  }
+
 })
 
 export const exploreSlice = createSlice({
@@ -33,9 +33,8 @@ export const exploreSlice = createSlice({
     },
     query: '',
     view: 'list',
-    allParksStatus: 'idle',
-    intervalParksStatus: 'idle',
-    error: null
+    parksStatus: 'idle',
+    error: null,
   },
   reducers: {
     setFilter: (state, action) => {
@@ -110,37 +109,20 @@ export const exploreSlice = createSlice({
   },
   extraReducers(builder) {
     builder
-      .addCase(fetchFirstIntervalParks.pending, (state) => {
-        state.intervalParksStatus = 'loading';
+      .addCase(fetchParks.pending, (state) => {
+        state.parksStatus = 'loading';
+        state.error = null;
       })
-      .addCase(fetchFirstIntervalParks.fulfilled, (state, action) => {
-        try {
-          state.intervalParksStatus = 'succeeded'
-          // Add fetched parks to list view
-          state.listParks = action.payload;
-        } catch(e) {
-          console.log("Error: " + e);
-        }
+      .addCase(fetchParks.fulfilled, (state, action) => {
+        state.parksStatus = 'succeeded'
+        // Add fetched parks to state depending on the current designation filter
+        state.allParks = action.payload;
+        state.mapParks = action.payload;
+        state.listParks = action.payload.slice(0, state.interval);
+        state.error = null;
       })
-      .addCase(fetchFirstIntervalParks.rejected, (state, action) => {
-        state.intervalParksStatus = 'failed';
-        state.error = action.error.message;
-      })
-      .addCase(fetchAllParks.pending, (state) => {
-        state.allParksStatus = 'loading';
-      })
-      .addCase(fetchAllParks.fulfilled, (state, action) => {
-        try {
-          state.allParksStatus = 'succeeded'
-          // Add fetched parks to state depending on the current designation filter
-          state.allParks = action.payload;
-          state.mapParks = action.payload;
-        } catch(e) {
-          alert("Error: " + e);
-        }
-      })
-      .addCase(fetchAllParks.rejected, (state, action) => {
-        state.allParksStatus = 'failed';
+      .addCase(fetchParks.rejected, (state, action) => {
+        state.parksStatus = 'failed';
         state.error = action.error.message;
       })
   },
@@ -153,6 +135,7 @@ export const selectMapParks = (state) => state.explore.mapParks;
 export const selectListParks = (state) => state.explore.listParks;
 export const selectInterval = (state) => state.explore.interval;
 export const selectSort = (state) => state.explore.sort;
+export const selectError = (state) => state.explore.error;
 export const selectFilter = (state) => state.explore.filter;
 export const selectQuery = (state) => state.explore.query;
 export const selectView = (state) => state.explore.view;
