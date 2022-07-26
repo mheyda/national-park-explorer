@@ -1,5 +1,6 @@
 
-const baseUrl = 'http://127.0.0.1:8000/';
+// const baseUrl = 'http://127.0.0.1:8000/'; // For development
+const baseUrl = 'https://mheyda-server.herokuapp.com/'; // For production
 let authorization = null;
 
 export const makeRequest = async (options) => {

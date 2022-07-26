@@ -13,8 +13,8 @@ export const getFavorites = createAsyncThunk('favorites/getFavorites', async (op
   });
 
   if (favorites.error) {
+    return rejectWithValue(favorites.error);
   } else {
-    console.log(favorites.data)
     return favorites.data;
   }
 })
@@ -42,7 +42,9 @@ export const favoritesSlice = createSlice({
   initialState: {
     favorites: [],
     favoritesStatus: 'idle',
+    favoritesError: null,
     toggleStatus: 'idle',
+    toggleError: null,
   },
   reducers: {
     setToggleStatus: (state, action) => {
@@ -52,17 +54,16 @@ export const favoritesSlice = createSlice({
   extraReducers(builder) {
     builder
     .addCase(getFavorites.pending, (state) => {
-      state.toggleStatus = 'loading';
+      state.favoritesStatus = 'loading';
       state.error = null;
     })
     .addCase(getFavorites.fulfilled, (state, action) => {
-      state.toggleStatus = 'succeeded'
+      state.favoritesStatus = 'succeeded'
       state.favorites = action.payload;
-      console.log(action.payload)
     })
     .addCase(getFavorites.rejected, (state, action) => {
-      state.toggleStatus = 'failed';
-      state.error = action.error.message;
+      state.favoritesStatus = 'failed';
+      state.favoritesError = action.error.message;
     })
     .addCase(toggleFavorite.pending, (state) => {
       state.toggleStatus = 'loading';
@@ -74,7 +75,7 @@ export const favoritesSlice = createSlice({
     })
     .addCase(toggleFavorite.rejected, (state, action) => {
       state.toggleStatus = 'failed';
-      state.error = action.error.message;
+      state.toggleError = action.error.message;
     })
   },
 });

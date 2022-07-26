@@ -37,12 +37,11 @@ export default function Authenticate() {
             authRequired: false,
         });
         if (login.error) {
-            console.log(login.data)
             setUsernameError(login.data.detail);
             setPassword('');
         } else {
             localStorage.setItem('tokens', JSON.stringify(login.data));
-            window.location.href = '/user';
+            window.location.href = '/';
         }
     }
 
