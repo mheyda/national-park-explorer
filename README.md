@@ -1,3 +1,5 @@
+<img src="https://i.ibb.co/wr3NXZQ/National-Park-Explorer-Image-1.jpg" alt="National-Park-Explorer-Image-1" width="100%">
+
 # National Park Explorer
 
 ## Overview
