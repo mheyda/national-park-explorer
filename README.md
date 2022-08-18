@@ -1,4 +1,4 @@
-# National Park Explorer
+<img src="https://i.ibb.co/wr3NXZQ/National-Park-Explorer-Image-1.jpg" alt="National-Park-Explorer-Image-1" width="100%">
 
 ## Overview
 Knowing the mental and physical benefits of getting outside, I wanted to develop a web app that would allow people to get inspired by America's national parks. The app consumes three REST APIs from the National Park Service, OpenWeatherMap, and Leaflet to display information and weather data about national parks in both list and map format. Parks can be searched for, sorted, and filtered by multiple criteria so users can find parks more relevant to their interests. Additionally, to make the app more personalized, users can also sign up for an account to save their favorite parks to their profile for future reference.
