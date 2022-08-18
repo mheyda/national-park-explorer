@@ -26,8 +26,9 @@
     .filter-page {
         width: 576px;
         height: 80vh;
-        margin-left: auto;
-        margin-right: auto;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
         border-radius: 10px;
     }
 }
