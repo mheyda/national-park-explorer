@@ -123,7 +123,7 @@ DATABASES = {
         'NAME': 'national-park-explorer',
         'USER': env.str('DATABASE_USER'),
         'PASSWORD': env.str('DATABASE_PASSWORD'),
-        'HOST': 'national-park-explorer.cyrmgqcsy3l2.us-east-1.rds.amazonaws.com',
+        'HOST': 'national-park-explorer',
         'PORT': '5432',
     }
 }
