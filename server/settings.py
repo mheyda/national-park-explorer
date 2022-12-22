@@ -123,7 +123,7 @@ DATABASES = {
         'NAME': 'national-park-explorer',
         'USER': env.str('DATABASE_USER'),
         'PASSWORD': env.str('DATABASE_PASSWORD'),
-        'HOST': 'localhost',
+        'HOST': 'national-park-explorer',
         'PORT': '5432',
     }
 }
