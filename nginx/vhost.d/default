@@ -64,22 +64,21 @@
 
 
 
+
 server {
     listen         80;
-    server_name    marshallcodes.com;
+    server_name    npe.marshallcodes.com www.npe.marshallcodes.com;
 
     location / {
-    set marshallcodes.com http://localhost:8000;
-    proxy_pass marshallcodes.com;
-  }
+		proxy_pass localhost:8001;
+	}
 }
 
 server {
     listen         80;
-    server_name    npe.marshallcodes.com;
+    server_name    marshallcodes.com www.marshallcodes.com;
 
     location / {
-    set npe.marshallcodes.com http://localhost:8001;
-    proxy_pass npe.marshallcodes.com;
-  }
+		proxy_pass localhost:8000;
+	}
 }
