@@ -30,31 +30,56 @@
 
 
 
- server {
-    listen 80;
-    server_name marshallcodes.com;
-    location / {
-        proxy_set_header Host $host;
-        proxy_pass http://127.0.0.1:8000;
-        proxy_redirect off;
-    }
+#  server {
+#     listen 80;
+#     server_name marshallcodes.com;
+#     location / {
+#         proxy_set_header Host $host;
+#         proxy_pass http://127.0.0.1:8000;
+#         proxy_redirect off;
+#     }
 
-	location /static/ {
-		alias /home/app/web/staticfiles/;
-		add_header Access-Control-Allow-Origin *;
-	}
+# 	location /static/ {
+# 		alias /home/app/web/staticfiles/;
+# 		add_header Access-Control-Allow-Origin *;
+# 	}
 
-	location /media/ {
-		alias /home/app/web/mediafiles/;
-		add_header Access-Control-Allow-Origin *;
-	}
-}
+# 	location /media/ {
+# 		alias /home/app/web/mediafiles/;
+# 		add_header Access-Control-Allow-Origin *;
+# 	}
+# }
+# server {
+#     listen 80;
+#     server_name npe.marshallcodes.com;
+#     location / {
+#         proxy_set_header Host $host;
+#         proxy_pass http://127.0.0.1:8001;
+#         proxy_redirect off;
+#     }
+# }   
+
+
+
+
+
+
 server {
-    listen 80;
-    server_name npe.marshallcodes.com;
+    listen         80;
+    server_name    marshallcodes.com;
+
     location / {
-        proxy_set_header Host $host;
-        proxy_pass http://127.0.0.1:8001;
-        proxy_redirect off;
-    }
-}   
+    set marshallcodes.com http://localhost:8000;
+    proxy_pass marshallcodes.com;
+  }
+}
+
+server {
+    listen         80;
+    server_name    npe.marshallcodes.com;
+
+    location / {
+    set npe.marshallcodes.com http://localhost:8001;
+    proxy_pass npe.marshallcodes.com;
+  }
+}
