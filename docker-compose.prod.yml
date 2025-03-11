@@ -29,9 +29,8 @@ services:
         # Name of the dockerfile
       dockerfile: Dockerfile.prod
     container_name: npe-frontend
-    ports:
-     # Host port:Container port
-      - '8001:8001'
+    expose:
+      -8001
     stdin_open: true
   nginx-proxy:
     container_name: nginx-proxy

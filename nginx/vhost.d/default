@@ -1,6 +1,6 @@
 
 server {
-	server_name marshallcodes.com;
+	server_name www.marshallcodes.com;
 	
 	location / {
 		proxy_pass http://marshallcodes.com:8000;
@@ -18,7 +18,7 @@ server {
 	}
  }
  server {
-	server_name npe.marshallcodes.com;
+	server_name www.npe.marshallcodes.com;
 	
 	location / {
 		proxy_pass http://npe.marshallcodes.com:8001;
