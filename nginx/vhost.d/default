@@ -62,31 +62,31 @@
 
 
 
-http {
+# http {
 
-	server {
-		server_name    www.marshallcodes.com marshallcodes.com;
+# 	server {
+# 		server_name    www.marshallcodes.com marshallcodes.com;
 
-		location /static/ {
-			alias http://marshallcodes.com:8000/home/app/web/staticfiles/;
-			add_header Access-Control-Allow-Origin *;
-		}
+# 		location /static/ {
+# 			alias http://marshallcodes.com:8000/home/app/web/staticfiles/;
+# 			add_header Access-Control-Allow-Origin *;
+# 		}
 
-		location /media/ {
-			alias http://marshallcodes.com:8000/home/app/web/mediafiles/;
-			add_header Access-Control-Allow-Origin *;
-		}
+# 		location /media/ {
+# 			alias http://marshallcodes.com:8000/home/app/web/mediafiles/;
+# 			add_header Access-Control-Allow-Origin *;
+# 		}
 
-		location / {
-			proxy_pass http://localhost:8000;
-		}
-	}
+# 		location / {
+# 			proxy_pass http://localhost:8000;
+# 		}
+# 	}
 
-	server {
-		server_name    www.npe.marshallcodes.com npe.marshallcodes.com;
+# 	server {
+# 		server_name    www.npe.marshallcodes.com npe.marshallcodes.com;
 
-		location / {
-			proxy_pass http://localhost:8001;
-		}
-	}
-}
+# 		location / {
+# 			proxy_pass http://localhost:8001;
+# 		}
+# 	}
+# }
