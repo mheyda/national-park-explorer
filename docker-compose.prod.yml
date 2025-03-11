@@ -29,6 +29,11 @@ services:
         # Name of the dockerfile
       dockerfile: Dockerfile.prod
     container_name: npe-frontend
+    environment:
+      - VIRTUAL_HOST=npe.marshallcodes.com
+      - VIRTUAL_PORT=8001
+      - LETSENCRYPT_HOST=npe.marshallcodes.com
+      - LETSENCRYPT_EMAIL=marshallheyda@gmail.com
     expose:
       - 8001
     stdin_open: true
