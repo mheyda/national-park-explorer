@@ -63,22 +63,36 @@
 
 
 
-
+server {
+	listen		 80;
+    server_name  www.marshallcodes.com;
+    return       301 http://marshallcodes.com$request_uri;
+}
 
 server {
     listen         80;
-    server_name    npe.marshallcodes.com www.npe.marshallcodes.com;
+    server_name    marshallcodes.com;
 
     location / {
-		proxy_pass localhost:8001;
+		proxy_pass localhost:8000;
+	}
+
+	location /static/ {
+		alias http://marshallcodes.com:8000/home/app/web/staticfiles/;
+		add_header Access-Control-Allow-Origin *;
+	}
+
+	location /media/ {
+		alias http://marshallcodes.com:8000/home/app/web/mediafiles/;
+		add_header Access-Control-Allow-Origin *;
 	}
 }
 
 server {
     listen         80;
-    server_name    marshallcodes.com www.marshallcodes.com;
+    server_name    npe.marshallcodes.com;
 
     location / {
-		proxy_pass localhost:8000;
+		proxy_pass localhost:8001;
 	}
 }
