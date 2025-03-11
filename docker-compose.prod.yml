@@ -22,6 +22,17 @@ services:
       - postgres_data:/var/lib/postgresql/data/
     env_file:
       - ./.env.prod.db
+  npe:
+  # Location to the react.js dockerfile
+    build: 
+      context: ./frontend
+        # Name of the dockerfile
+      dockerfile: Dockerfile.prod
+    container_name: npe-frontend
+    ports:
+     # Host port:Container port
+      - '8001:8001'
+    stdin_open: true
   nginx-proxy:
     container_name: nginx-proxy
     build: nginx

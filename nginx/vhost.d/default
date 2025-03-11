@@ -1,9 +1,26 @@
-location /static/ {
-  alias /home/app/web/staticfiles/;
-  add_header Access-Control-Allow-Origin *;
-}
 
-location /media/ {
-  alias /home/app/web/mediafiles/;
-  add_header Access-Control-Allow-Origin *;
-}
+server {
+	server_name marshallcodes.com;
+	
+	location / {
+		proxy_pass http://marshallcodes.com:8000;
+		add_header Access-Control-Allow-Origin *;
+	}
+
+	location /static/ {
+		alias http://marshallcodes.com:8000/home/app/web/staticfiles/;
+		add_header Access-Control-Allow-Origin *;
+	}
+
+	location /media/ {
+		alias http://marshallcodes.com:8000/home/app/web/mediafiles/;
+		add_header Access-Control-Allow-Origin *;
+	}
+ }
+ server {
+	server_name npe.marshallcodes.com;
+	
+	location / {
+		proxy_pass http://npe.marshallcodes.com:8001;
+	}
+ }
