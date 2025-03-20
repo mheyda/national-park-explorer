@@ -1,0 +1,27 @@
+# Use an official Python image as a parent image
+FROM python:3.10
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# Install system dependencies (if needed for your project, e.g., build tools for Python packages)
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libpq-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy the current directory contents into the container at /app
+COPY . /app/
+
+# Install the Python dependencies in the container
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Expose the port that Django will run on
+EXPOSE 8000
+
+# Define environment variables (optional, depending on your app)
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED 1
+
+# Run Django's development server (bind it to 0.0.0.0 so it's accessible from outside the container)
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
