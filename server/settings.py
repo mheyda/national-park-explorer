@@ -31,7 +31,7 @@ OPEN_WEATHER_API_KEY = env.str('OPEN_WEATHER_API_KEY')
 NPS_API_KEY = env.str('NPS_API_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', '52.14.178.249', 'marshallsapi.xyz', 'marshallcodes.com', 'marshallcodes.local', 'api.marshallcodes.local']
 
