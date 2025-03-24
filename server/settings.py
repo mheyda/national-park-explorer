@@ -33,7 +33,7 @@ NPS_API_KEY = env.str('NPS_API_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', '52.14.178.249', 'marshallsapi.xyz', 'marshallcodes.com', 'marshallcodes.local', 'api.marshallcodes.local']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', 'marshallcodes.com', 'marshallcodes.local', 'api.marshallcodes.com', 'api.marshallcodes.local']
 
 
 # Application definition
@@ -173,5 +173,5 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-CSRF_TRUSTED_ORIGINS = ["https://marshallcodes.com", "http://api.marshallcodes.local:1000", "http://localhost", "http://127.0.0.1", "http://0.0.0.0"]
+CSRF_TRUSTED_ORIGINS = ["https://marshallcodes.com", "https://api.marshallcodes.com", "http://api.marshallcodes.local:1000", "http://localhost", "http://127.0.0.1", "http://0.0.0.0"]
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
