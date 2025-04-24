@@ -1,6 +1,7 @@
+from django.core.validators import FileExtensionValidator
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework import serializers
-from .models import CustomUser
+from .models import CustomUser, GpxFile
 
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -29,3 +30,10 @@ class CustomUserSerializer(serializers.ModelSerializer):
             user.set_password(password)
         user.save()
         return user
+    
+
+class FileUploadSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = GpxFile
+        fields = ['user', 'file', 'original_filename']

@@ -3,15 +3,18 @@ import requests
 import json
 from django.conf import settings
 from django.http import JsonResponse
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, parser_classes
 from rest_framework.response import Response
 from rest_framework import filters, permissions, status
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.parsers import MultiPartParser
 from rest_framework_simplejwt.views import TokenObtainPairView
-from .serializers import MyTokenObtainPairSerializer, CustomUserSerializer
-from .models import CustomUser, Favorite
+from .serializers import MyTokenObtainPairSerializer, CustomUserSerializer, FileUploadSerializer
+from .models import CustomUser, Favorite, GpxFile
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
+import os
+
 
 
 # Render home page
@@ -160,3 +163,47 @@ class CustomUserCreate(APIView):
                 json = serializer.data
                 return Response(json, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+@parser_classes([MultiPartParser]) 
+def upload_gpx(request):
+    serializer = FileUploadSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save(user=request.user, file=request.data['file'], original_filename=request.data['file'].name)
+        return Response({'message': 'Uploaded ' + request.data['file'].name + ' successfully.'}, status=status.HTTP_201_CREATED)
+    
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_gpx(request):
+    print("YES")
+
+    user = CustomUser.objects.get(username = request.user)
+    files_list = GpxFile.objects.filter(user = user)
+    print("fileslist: ", files_list)
+
+
+    gpx_data = {}
+    for file_obj in files_list:
+        print("file_obj.file: ", file_obj.file)
+        print("type: ", type(file_obj.file))
+
+        print("file_obj.file.path: ", file_obj.file.path)
+        print("type: ", type(file_obj.file.path))
+        # filename = os.path.basename(file_obj.file)
+        # print("filename: ", filename)
+        if os.path.exists(file_obj.file.path):
+            with open(file_obj.file.path, 'r', encoding='utf-8') as f:
+                gpx_data[file_obj.file.path.split("\\")[-1]] = f.read()
+    # for file_obj in files_list:
+    #     print(file_obj.file)
+
+    # return FileResponse()
+
+    return JsonResponse(gpx_data)
+
+    return Response("OK", status=status.HTTP_200_OK)
