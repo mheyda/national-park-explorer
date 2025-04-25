@@ -169,6 +169,11 @@ class CustomUserCreate(APIView):
 @permission_classes([IsAuthenticated])
 @parser_classes([MultiPartParser]) 
 def upload_gpx(request):
+    
+    # Only allow myself for right now
+    if (request.user.username != "mheyda"):
+        return Response({'message': 'Sorry, this functionality is not yet available to you.'}, status=status.HTTP_401_UNAUTHORIZED)
+    
     serializer = FileUploadSerializer(data=request.data)
     if serializer.is_valid():
         serializer.save(user=request.user, file=request.data['file'], original_filename=request.data['file'].name)
@@ -180,30 +185,17 @@ def upload_gpx(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_gpx(request):
-    print("YES")
+    
+    # Only allow myself for right now
+    if (request.user.username != "mheyda"):
+        return Response({'message': 'Sorry, this functionality is not yet available to you.'}, status=status.HTTP_401_UNAUTHORIZED)
 
     user = CustomUser.objects.get(username = request.user)
     files_list = GpxFile.objects.filter(user = user)
-    print("fileslist: ", files_list)
-
 
     gpx_data = {}
     for file_obj in files_list:
-        print("file_obj.file: ", file_obj.file)
-        print("type: ", type(file_obj.file))
-
-        print("file_obj.file.path: ", file_obj.file.path)
-        print("type: ", type(file_obj.file.path))
-        # filename = os.path.basename(file_obj.file)
-        # print("filename: ", filename)
         if os.path.exists(file_obj.file.path):
             with open(file_obj.file.path, 'r', encoding='utf-8') as f:
                 gpx_data[file_obj.file.path.split("\\")[-1]] = f.read()
-    # for file_obj in files_list:
-    #     print(file_obj.file)
-
-    # return FileResponse()
-
     return JsonResponse(gpx_data)
-
-    return Response("OK", status=status.HTTP_200_OK)
