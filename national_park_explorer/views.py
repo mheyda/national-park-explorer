@@ -1,6 +1,8 @@
 from django.shortcuts import render
 import requests
 import json
+import gpxpy
+import geojson
 from django.conf import settings
 from django.http import JsonResponse
 from rest_framework.decorators import api_view, permission_classes, parser_classes
@@ -184,18 +186,52 @@ def upload_gpx(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def get_gpx(request):
+def get_gpx_filenames(request):
     
     # Only allow myself for right now
     if (request.user.username != "mheyda"):
         return Response({'message': 'Sorry, this functionality is not yet available to you.'}, status=status.HTTP_401_UNAUTHORIZED)
 
     user = CustomUser.objects.get(username = request.user)
-    files_list = GpxFile.objects.filter(user = user)
+    filename_list = GpxFile.objects.filter(user = user).values_list('original_filename', flat=True)
+    return Response(filename_list, status=status.HTTP_200_OK)
 
-    gpx_data = {}
-    for file_obj in files_list:
-        if os.path.exists(file_obj.file.path):
-            with open(file_obj.file.path, 'r', encoding='utf-8') as f:
-                gpx_data[file_obj.file.path.split("\\")[-1]] = f.read()
-    return JsonResponse(gpx_data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_gpx(request, filename):
+    
+    # Only allow myself for right now
+    if (request.user.username != "mheyda"):
+        return Response({'message': 'Sorry, this functionality is not yet available to you.'}, status=status.HTTP_401_UNAUTHORIZED)
+
+    user = CustomUser.objects.get(username = request.user)
+    file_obj = GpxFile.objects.filter(user = user, original_filename = filename).first()
+
+    with open(file_obj.file.path, 'r', encoding='utf-8') as gpx_file:
+        gpx = gpxpy.parse(gpx_file)
+
+    features = []
+
+    for track in gpx.tracks:
+        for segment in track.segments:
+            coords = []
+            times = []
+
+            for point in segment.points:
+                coords.append([
+                    point.latitude,
+                    point.longitude,
+                    # point.elevation if point.elevation is not None else 0
+                ])
+                times.append(point.time.isoformat() if point.time else None)
+
+            line = geojson.LineString(coords)
+            feature = geojson.Feature(
+                geometry=line,
+                properties={"times": times}
+            )
+            features.append(feature)
+
+    geojson_obj = geojson.FeatureCollection(features)
+    return JsonResponse(geojson_obj)
