@@ -81,3 +81,4 @@ docker-compose.yml
 
 /static
 /staticfiles
+/files
