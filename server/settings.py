@@ -88,7 +88,9 @@ SIMPLE_JWT = {
     'TOKEN_TYPE_CLAIM': 'token_type',
 }
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGINS = [
+    "https://maps.marshallcodes.com",
+]
 
 ROOT_URLCONF = 'server.urls'
 
@@ -175,3 +177,5 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 CSRF_TRUSTED_ORIGINS = ["https://marshallcodes.com", "https://api.marshallcodes.com", "http://api.marshallcodes.local:1000", "http://localhost", "http://127.0.0.1", "http://0.0.0.0"]
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+FILE_UPLOAD_MAX_MEMORY_SIZE = 50 * 1024 * 1024    # 50MB
