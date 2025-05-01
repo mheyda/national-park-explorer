@@ -91,6 +91,7 @@ SIMPLE_JWT = {
 CORS_ALLOWED_ORIGINS = [
     "https://maps.marshallcodes.com",
 ]
+CORS_ALLOW_CREDENTIALS = True
 
 ROOT_URLCONF = 'server.urls'
 
