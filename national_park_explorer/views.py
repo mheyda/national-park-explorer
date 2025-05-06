@@ -208,15 +208,21 @@ def get_gpx_filenames(request):
         min_lon = float('inf')
         max_lon = float('-inf')
 
-        # Iterate through all the track segments and points to find the bounds
-        for track in gpx.tracks:
-            for segment in track.segments:
-                for point in segment.points:
-                    lat, lon = point.latitude, point.longitude
-                    min_lat = min(min_lat, lat)
-                    max_lat = max(max_lat, lat)
-                    min_lon = min(min_lon, lon)
-                    max_lon = max(max_lon, lon)
+        # # Iterate through all the track segments and points to find the bounds
+        # for track in gpx.tracks:
+        #     for segment in track.segments:
+        #         for point in segment.points:
+        #             lat, lon = point.latitude, point.longitude
+        #             min_lat = min(min_lat, lat)
+        #             max_lat = max(max_lat, lat)
+        #             min_lon = min(min_lon, lon)
+        #             max_lon = max(max_lon, lon)
+
+        # Temp until this ^ part is moved to file upload
+        min_lat = gpx.tracks[0].segments[0].points[0].latitude
+        max_lat = gpx.tracks[0].segments[0].points[0].latitude
+        min_lon = gpx.tracks[0].segments[0].points[0].longitude
+        max_lon = gpx.tracks[0].segments[0].points[0].longitude
 
         file_dict[gpx_file.original_filename] = [[min_lat, min_lon], [max_lat, max_lon]]
 
