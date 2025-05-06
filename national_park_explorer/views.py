@@ -194,8 +194,33 @@ def get_gpx_filenames(request):
 
     user = CustomUser.objects.get(username = request.user)
     filename_list = GpxFile.objects.filter(user = user).values_list('original_filename', flat=True)
-    return Response(filename_list, status=status.HTTP_200_OK)
+    files_list = GpxFile.objects.filter(user = user)
 
+    file_dict = {key: [[0, 0], [0, 0]] for key in filename_list}
+
+    for gpx_file in files_list:
+        with open(gpx_file.file.path, 'r', encoding='utf-8') as file:
+            gpx = gpxpy.parse(file)
+        
+        # Initialize bounds
+        min_lat = float('inf')
+        max_lat = float('-inf')
+        min_lon = float('inf')
+        max_lon = float('-inf')
+
+        # Iterate through all the track segments and points to find the bounds
+        for track in gpx.tracks:
+            for segment in track.segments:
+                for point in segment.points:
+                    lat, lon = point.latitude, point.longitude
+                    min_lat = min(min_lat, lat)
+                    max_lat = max(max_lat, lat)
+                    min_lon = min(min_lon, lon)
+                    max_lon = max(max_lon, lon)
+
+        file_dict[gpx_file.original_filename] = [[min_lat, min_lon], [max_lat, max_lon]]
+
+    return JsonResponse(file_dict, status=status.HTTP_200_OK)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
