@@ -3,6 +3,8 @@ import requests
 import json
 import gpxpy
 import geojson
+from django.db import transaction
+from django.core.cache import cache
 from django.conf import settings
 from django.http import JsonResponse
 from rest_framework.decorators import api_view, permission_classes, parser_classes
@@ -167,6 +169,7 @@ class CustomUserCreate(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @parser_classes([MultiPartParser]) 
@@ -178,9 +181,58 @@ def upload_gpx(request):
     
     serializer = FileUploadSerializer(data=request.data)
     if serializer.is_valid():
-        serializer.save(user=request.user, file=request.data['file'], original_filename=request.data['file'].name)
-        return Response({'message': 'Uploaded ' + request.data['file'].name + ' successfully.'}, status=status.HTTP_201_CREATED)
-    
+        if GpxFile.objects.filter(user=request.user, original_filename=request.data['file'].name).exists():
+            return Response({'message': f'File {request.data["file"].name} already exists in database.'}, status=status.HTTP_409_CONFLICT)
+            
+        with transaction.atomic():
+            gpx_file = serializer.save(user=request.user, file=request.data['file'], original_filename=request.data['file'].name)
+            
+            try:
+                with open(gpx_file.file.path, 'r', encoding='utf-8') as f:
+                    gpx = gpxpy.parse(f)
+
+                features = []
+                # Initialize bounds
+                min_lat = float('inf')
+                max_lat = float('-inf')
+                min_lon = float('inf')
+                max_lon = float('-inf')
+
+                for track in gpx.tracks:
+                    for segment in track.segments:
+                        coords = []
+                        times = []
+
+                        for point in segment.points:
+                            lat, lon = point.latitude, point.longitude
+                            min_lat = min(min_lat, lat)
+                            max_lat = max(max_lat, lat)
+                            min_lon = min(min_lon, lon)
+                            max_lon = max(max_lon, lon)
+                            coords.append([lat, lon,
+                                # point.elevation if point.elevation is not None else 0
+                            ])
+                            times.append(point.time.isoformat() if point.time else None)
+
+                        line = geojson.LineString(coords)
+                        feature = geojson.Feature(
+                            geometry=line,
+                            properties={"times": times}
+                        )
+                        features.append(feature)
+
+                geojson_obj = geojson.FeatureCollection(features)
+                bounds = [[min_lat, min_lon], [max_lat, max_lon]]
+
+                gpx_file.bounds = bounds
+                gpx_file.geojson = json.loads(geojson.dumps(geojson_obj))
+                gpx_file.save()
+
+                return Response({'message': 'Uploaded ' + request.data['file'].name + ' successfully.'}, status=status.HTTP_201_CREATED)
+            
+            except Exception as e:
+                return Response({'message': f'Failed to parse GPX: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
+        
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -192,77 +244,47 @@ def get_gpx_filenames(request):
     if (request.user.username != "mheyda"):
         return Response({'message': 'Sorry, this functionality is not yet available to you.'}, status=status.HTTP_401_UNAUTHORIZED)
 
-    user = CustomUser.objects.get(username = request.user)
-    filename_list = GpxFile.objects.filter(user = user).values_list('original_filename', flat=True)
-    files_list = GpxFile.objects.filter(user = user)
+    # Try cache first
+    cache_key = f"get_gpx_filenames_{request.user.id}"
+    cached_data = cache.get(cache_key)
 
-    file_dict = {key: [[0, 0], [0, 0]] for key in filename_list}
+    if cached_data:
+        print("Using cache for", request.user.username)
+        return JsonResponse(cached_data, status=status.HTTP_200_OK)
 
+    files_list = GpxFile.objects.filter(user = request.user)
+
+    files_dict = {}
     for gpx_file in files_list:
-        with open(gpx_file.file.path, 'r', encoding='utf-8') as file:
-            gpx = gpxpy.parse(file)
-        
-        # Initialize bounds
-        min_lat = float('inf')
-        max_lat = float('-inf')
-        min_lon = float('inf')
-        max_lon = float('-inf')
+        files_dict[gpx_file.original_filename] = gpx_file.bounds
 
-        # # Iterate through all the track segments and points to find the bounds
-        # for track in gpx.tracks:
-        #     for segment in track.segments:
-        #         for point in segment.points:
-        #             lat, lon = point.latitude, point.longitude
-        #             min_lat = min(min_lat, lat)
-        #             max_lat = max(max_lat, lat)
-        #             min_lon = min(min_lon, lon)
-        #             max_lon = max(max_lon, lon)
+    cache.set(cache_key, files_dict, timeout=86400) # Cache for 24 hrs
 
-        # Temp until this ^ part is moved to file upload
-        min_lat = gpx.tracks[0].segments[0].points[0].latitude
-        max_lat = gpx.tracks[0].segments[0].points[0].latitude
-        min_lon = gpx.tracks[0].segments[0].points[0].longitude
-        max_lon = gpx.tracks[0].segments[0].points[0].longitude
-
-        file_dict[gpx_file.original_filename] = [[min_lat, min_lon], [max_lat, max_lon]]
-
-    return JsonResponse(file_dict, status=status.HTTP_200_OK)
+    return JsonResponse(files_dict, status=status.HTTP_200_OK)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_gpx(request, filename):
-    
+
     # Only allow myself for right now
     if (request.user.username != "mheyda"):
         return Response({'message': 'Sorry, this functionality is not yet available to you.'}, status=status.HTTP_401_UNAUTHORIZED)
 
-    user = CustomUser.objects.get(username = request.user)
-    file_obj = GpxFile.objects.filter(user = user, original_filename = filename).first()
+    # Try cache first
+    cache_key = f"get_gpx_{request.user.id}_{filename}"
+    cached_data = cache.get(cache_key)
 
-    with open(file_obj.file.path, 'r', encoding='utf-8') as gpx_file:
-        gpx = gpxpy.parse(gpx_file)
+    if cached_data:
+        print("Using cache for", filename)
+        return JsonResponse(cached_data, status=status.HTTP_200_OK)
 
-    features = []
+    try:
+        # Get geojson from database
+        gpx_file = GpxFile.objects.get(user = request.user, original_filename = filename)
+        geojson = gpx_file.geojson
+    except GpxFile.DoesNotExist:
+        return JsonResponse({'message': f'Filename {filename} not found for user {request.user.username}'}, status=status.HTTP_404_NOT_FOUND)
+    
+    cache.set(cache_key, geojson, timeout=86400) # Cache for 24 hrs
 
-    for track in gpx.tracks:
-        for segment in track.segments:
-            coords = []
-            times = []
-
-            for point in segment.points:
-                coords.append([
-                    point.latitude,
-                    point.longitude,
-                    # point.elevation if point.elevation is not None else 0
-                ])
-                times.append(point.time.isoformat() if point.time else None)
-
-            line = geojson.LineString(coords)
-            feature = geojson.Feature(
-                geometry=line,
-                properties={"times": times}
-            )
-            features.append(feature)
-
-    geojson_obj = geojson.FeatureCollection(features)
-    return JsonResponse(geojson_obj)
+    return JsonResponse(geojson, status=status.HTTP_200_OK)

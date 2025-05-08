@@ -2,6 +2,8 @@ import uuid
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import FileExtensionValidator
+from django.utils import timezone
+
 
 # User data
 class CustomUser(AbstractUser):
@@ -25,3 +27,6 @@ class GpxFile(models.Model):
     user = models.ForeignKey(CustomUser, on_delete = models.CASCADE, default = None)
     file = models.FileField(upload_to=generate_filepath,  validators=[FileExtensionValidator(allowed_extensions=['gpx'], message="Invalid file type.")])
     original_filename = models.CharField(blank=True, max_length=255)
+    bounds = models.JSONField(null=True, blank=True)
+    geojson = models.JSONField(null=True, blank=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True, null=True)

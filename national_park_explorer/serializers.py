@@ -36,4 +36,5 @@ class FileUploadSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = GpxFile
-        fields = ['user', 'file', 'original_filename']
+        fields = ['user', 'file', 'original_filename', 'bounds', 'geojson']
+        read_only_fields = ['bounds', 'geojson']
