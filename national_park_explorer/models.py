@@ -28,5 +28,15 @@ class GpxFile(models.Model):
     file = models.FileField(upload_to=generate_filepath,  validators=[FileExtensionValidator(allowed_extensions=['gpx'], message="Invalid file type.")])
     original_filename = models.CharField(blank=True, max_length=255)
     bounds = models.JSONField(null=True, blank=True)
+    distance = models.FloatField(null=True, blank=True) # Meters
+    timer_time = models.IntegerField(null=True, blank=True) # seconds
+    total_elapsed_time = models.IntegerField(null=True, blank=True) # seconds
+    moving_time = models.IntegerField(null=True, blank=True) # seconds
+    max_speed = models.FloatField(null=True, blank=True) # m/s
+    ascent = models.FloatField(null=True, blank=True) # Meters
+    descent = models.FloatField(null=True, blank=True) # Meters
+    calories = models.IntegerField(null=True, blank=True)
+    avg_heart_rate = models.IntegerField(null=True, blank=True) # bpm
+    avg_cadence = models.IntegerField(null=True, blank=True) # rpm
     geojson = models.JSONField(null=True, blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True, null=True)

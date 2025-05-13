@@ -250,17 +250,31 @@ def get_gpx_filenames(request):
 
     if cached_data:
         print("Using cache for", request.user.username)
-        return JsonResponse(cached_data, status=status.HTTP_200_OK)
+        return JsonResponse(cached_data, safe=False, status=status.HTTP_200_OK)
 
     files_list = GpxFile.objects.filter(user = request.user)
 
-    files_dict = {}
+    file_stats = []
     for gpx_file in files_list:
-        files_dict[gpx_file.original_filename] = gpx_file.bounds
+        file_stats.append({
+            'filename': gpx_file.original_filename,
+            'bounds': gpx_file.bounds,
+            'distance': gpx_file.distance,
+            'timer_time': gpx_file.timer_time,
+            'total_elapsed_time': gpx_file.total_elapsed_time,
+            'moving_time': gpx_file.moving_time,
+            'max_speed': gpx_file.max_speed,
+            'ascent': gpx_file.ascent,
+            'descent': gpx_file.descent,
+            'calories': gpx_file.calories,
+            'avg_heart_rate': gpx_file.avg_heart_rate,
+            'avg_cadence': gpx_file.avg_cadence,
+        })
+        
 
-    cache.set(cache_key, files_dict, timeout=86400) # Cache for 24 hrs
+    cache.set(cache_key, file_stats, timeout=86400) # Cache for 24 hrs
 
-    return JsonResponse(files_dict, status=status.HTTP_200_OK)
+    return JsonResponse(file_stats, safe=False, status=status.HTTP_200_OK)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
