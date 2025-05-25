@@ -381,41 +381,7 @@ def upload_file(request):
                                 }]
                             }
 
-                        # Map sport int to string
-                        FIT_SPORTS = {
-                            0: 'generic',
-                            1: 'running',
-                            2: 'cycling',
-                            3: 'transition',
-                            4: 'fitness_equipment',
-                            5: 'swimming',
-                            6: 'basketball',
-                            7: 'soccer',
-                            8: 'tennis',
-                            9: 'american_football',
-                            10: 'training',
-                            11: 'walking',
-                            12: 'cross_country_skiing',
-                            13: 'alpine_skiing',
-                            14: 'snowboarding',
-                            15: 'rowing',
-                            16: 'mountaineering',
-                            17: 'hiking',
-                            18: 'multi_sport',
-                            19: 'paddle_sports',
-                            20: 'boxing',
-                        }
-
-                        # Normalize sport to string
-                        if isinstance(sport_int, int):
-                            sport_name = FIT_SPORTS.get(sport_int, '')
-                        else:
-                            sport_str = str(sport_int).lower() if sport_int else ''
-                            if sport_str in FIT_SPORTS.values():
-                                sport_name = sport_str
-                            else:
-                                logger.warning(f"Unknown sport value '{sport_int}' found in FIT file, defaulting to ''.")
-                                sport_name = ''
+                        sport_name = str(sport_int).lower() if sport_int else ''
                         
                         if not activity_name:
                             activity_name = filename.rsplit('.', 1)[0]
