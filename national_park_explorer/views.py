@@ -650,7 +650,7 @@ def get_file_stats(request):
     if (request.user.username != "mheyda"):
         return Response({'message': 'Sorry, this functionality is not yet available to you.'}, status=status.HTTP_401_UNAUTHORIZED)
 
-    files_list = UploadedFile.objects.filter(user = request.user)
+    files_list = UploadedFile.objects.filter(user = request.user, processing_status = 'parsed')
 
     file_stats = []
     for file in files_list:
