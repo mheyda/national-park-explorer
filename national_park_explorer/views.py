@@ -16,7 +16,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .serializers import MyTokenObtainPairSerializer, CustomUserSerializer, FileUploadSerializer
-from .models import CustomUser, Favorite, UploadedFile, Activity, Record
+from .models import CustomUser, Favorite, Visited, UploadedFile, Activity, Record
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 import os
@@ -141,6 +141,41 @@ def favorites(request):
         except Exception:
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
+# API view for user to get and post requests for their visited parks
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def visited(request):
+    
+    if request.method == 'GET':
+        try:
+            user = CustomUser.objects.get(username=request.user)
+            visited_list = Visited.objects.filter(user=user).values_list('park_id', flat=True)
+            return Response(visited_list, status=status.HTTP_200_OK)
+        except Exception:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+    if request.method == 'POST':
+        try:
+            park_id = request.data
+            if not park_id:
+                raise ValueError('Data must not be empty.')
+                
+            user = CustomUser.objects.get(username=request.user)
+            visited_list = Visited.objects.filter(user=user).values_list('park_id', flat=True)
+
+            # Toggle off if already visited
+            if park_id in visited_list:
+                Visited.objects.filter(user=user, park_id=park_id).delete()
+                visited_list = Visited.objects.filter(user=user).values_list('park_id', flat=True)
+                return Response(visited_list, status=status.HTTP_200_OK)
+
+            # Add new visited park
+            Visited.objects.create(user=user, park_id=park_id)
+            visited_list = Visited.objects.filter(user=user).values_list('park_id', flat=True)
+            return Response(visited_list, status=status.HTTP_200_OK)
+
+        except Exception:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 
 class ObtainTokenPairWithClaims(TokenObtainPairView):
     permission_classes = (permissions.AllowAny,)

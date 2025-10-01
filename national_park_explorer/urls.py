@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import index, getWeather, getParks, user_info, favorites, upload_file, get_file_stats, get_geojson, ObtainTokenPairWithClaims, CustomUserCreate, LogoutAndBlacklistRefreshTokenForUserView
+from .views import index, getWeather, getParks, user_info, favorites, visited, upload_file, get_file_stats, get_geojson, ObtainTokenPairWithClaims, CustomUserCreate, LogoutAndBlacklistRefreshTokenForUserView
 from rest_framework_simplejwt import views as jwt_views
 
 urlpatterns = [
@@ -8,6 +8,7 @@ urlpatterns = [
     path("getParks/", getParks, name="getParks"),
     path("user/info/", user_info, name='user_info'),
     path("user/favorites/", favorites, name='favorites'),
+    path('user/visited/', visited, name='visited'),
     path("user/file/upload/", upload_file, name='upload_file'),
     path("user/file/getAllStats/", get_file_stats, name='get_file_stats'),
     path("user/file/getGeoJson/<str:filename>/", get_geojson, name='get_geojson'),

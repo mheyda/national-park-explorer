@@ -15,6 +15,10 @@ class Favorite(models.Model):
     park_id = models.CharField(blank=True, max_length=120)
     user = models.ForeignKey(CustomUser, on_delete = models.CASCADE, default = None)
 
+class Visited(models.Model):
+    park_id = models.CharField(blank=True, max_length=120)
+    user = models.ForeignKey(CustomUser, on_delete = models.CASCADE, default = None)
+
 # User uploaded files
 def generate_filepath(instance, filename):
     ext = filename.split('.')[-1]
