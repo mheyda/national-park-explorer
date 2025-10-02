@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import CustomUser, Favorite, UploadedFile, Activity, Record
+from .models import CustomUser, Favorite, Visited, UploadedFile, Activity, Record
 
 class CustomUserAdmin(admin.ModelAdmin):
     model = CustomUser
@@ -9,6 +9,7 @@ class FileAdmin(admin.ModelAdmin):
 
 admin.site.register(CustomUser, CustomUserAdmin)
 admin.site.register(Favorite)
+admin.site.register(Visited)
 admin.site.register(UploadedFile, FileAdmin)
 admin.site.register(Record)
 admin.site.register(Activity)
