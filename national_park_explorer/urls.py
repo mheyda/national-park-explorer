@@ -18,4 +18,7 @@ urlpatterns = [
     path('token/obtain/', ObtainTokenPairWithClaims.as_view(), name='token_create'),  
     path('token/refresh/', jwt_views.TokenRefreshView.as_view(), name='token_refresh'),
     path('blacklist/', LogoutAndBlacklistRefreshTokenForUserView.as_view(), name='blacklist')
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

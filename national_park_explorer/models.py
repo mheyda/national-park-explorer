@@ -1,29 +1,53 @@
+# models.py
+
 import uuid
+import os
+from io import BytesIO
+from PIL import Image
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import FileExtensionValidator
+from django.core.files.base import ContentFile
 
+# Constants
+IMAGE_SIZES = {
+    "thumbnail": (150, 150),
+    "small": (400, 400),
+    "medium": (800, 800),
+    "large": (1600, 1600),
+}
 
-# User data
+# ---------- Custom User ----------
 class CustomUser(AbstractUser):
     first_name = models.CharField(blank=True, max_length=120)
     last_name = models.CharField(blank=True, max_length=120)
-    birthdate = models.CharField(blank=True, max_length=120)
+    birthdate = models.DateField(blank=True, null=True)
 
-# --- NPE MODELS --- #
-# Custom feature data
+
+# ---------- Sync Log ----------
+class SyncLog(models.Model):
+    start_time = models.DateTimeField(auto_now_add=True)
+    end_time = models.DateTimeField(null=True)
+    success = models.BooleanField(default=False)
+    error_summary = models.TextField(blank=True)
+    parks_processed = models.PositiveIntegerField(default=0)
+    parks_failed = models.PositiveIntegerField(default=0)
+
+    def __str__(self):
+        return f"Sync at {self.start_time} — {'Success' if self.success else 'Failed'}"
+
+
+# ---------- Favorites & Visited ----------
 class Favorite(models.Model):
-    park_id = models.CharField(blank=True, max_length=120)
-    user = models.ForeignKey(CustomUser, on_delete = models.CASCADE, default = None)
+    park = models.ForeignKey("Park", on_delete=models.CASCADE)
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, default=None)
 
 class Visited(models.Model):
-    park_id = models.CharField(blank=True, max_length=120)
-    user = models.ForeignKey(CustomUser, on_delete = models.CASCADE, default = None)
+    park = models.ForeignKey("Park", on_delete=models.CASCADE)
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, default=None)
 
 
-# NPS API Data
-from django.db import models
-
+# ---------- NPS API Models ----------
 class Activity(models.Model):
     id = models.CharField(primary_key=True, max_length=64)
     name = models.CharField(max_length=255, default="Unnamed Activity")
@@ -60,7 +84,7 @@ class Park(models.Model):
     topics = models.ManyToManyField(Topic, related_name='parks')
 
     def save(self, *args, **kwargs):
-        if self.latLong:
+        if self.latLong and (self.latitude is None or self.longitude is None):
             import re
             lat_match = re.search(r'lat:([-\d.]+)', self.latLong)
             long_match = re.search(r'long:([-\d.]+)', self.latLong)
@@ -108,19 +132,94 @@ class EmailAddress(models.Model):
         return self.emailAddress
 
 
-def park_image_upload_path(instance, filename):
-    return f'park_images/{instance.park.parkCode}/{filename}'
+def upload_path_original(instance, filename):
+    return f"parks/{instance.park.parkCode}/original/{filename}"
+
+def upload_path_thumbnail(instance, filename):
+    return f"parks/{instance.park.parkCode}/thumbnail/{filename}"
+
+def upload_path_small(instance, filename):
+    return f"parks/{instance.park.parkCode}/small/{filename}"
+
+def upload_path_medium(instance, filename):
+    return f"parks/{instance.park.parkCode}/medium/{filename}"
+
+def upload_path_large(instance, filename):
+    return f"parks/{instance.park.parkCode}/large/{filename}"
 
 class ParkImage(models.Model):
-    park = models.ForeignKey('Park', on_delete=models.CASCADE, related_name='images')
-    title = models.CharField(max_length=255)
-    altText = models.CharField(max_length=255, blank=True, null=True)
-    caption = models.TextField(blank=True, null=True)
-    image = models.ImageField(upload_to=park_image_upload_path)
-    credit = models.CharField(max_length=255, blank=True, null=True)
+    park = models.ForeignKey('Park', on_delete=models.CASCADE, related_name="images")
+    title = models.CharField(max_length=255, blank=True)
+    altText = models.CharField(max_length=255, blank=True)
+    caption = models.TextField(blank=True)
+    credit = models.CharField(max_length=255, blank=True)
+    image_original = models.ImageField(upload_to=upload_path_original, blank=True, null=True)
+    image_thumbnail = models.ImageField(upload_to=upload_path_thumbnail, blank=True, null=True)
+    image_small = models.ImageField(upload_to=upload_path_small, blank=True, null=True)
+    image_medium = models.ImageField(upload_to=upload_path_medium, blank=True, null=True)
+    image_large = models.ImageField(upload_to=upload_path_large, blank=True, null=True)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._image_original = self.image_original
+
+    def delete_file(self, file_field):
+        """Deletes file from storage if it exists."""
+        if file_field and hasattr(file_field, 'storage') and file_field.name:
+            file_field.storage.delete(file_field.name)
+
+    def save_resized_images(self):
+        # Delete previous resized versions
+        for size in IMAGE_SIZES:
+            self.delete_file(getattr(self, f"image_{size}"))
+
+        if not self.image_original:
+            return
+
+        try:
+            img = Image.open(self.image_original)
+            if img.mode != "RGB":
+                img = img.convert("RGB")
+
+            filename = os.path.basename(self.image_original.name)
+
+            for size_name, size in IMAGE_SIZES.items():
+                resized = img.copy()
+                resized.thumbnail(size, Image.LANCZOS)
+
+                buffer = BytesIO()
+                resized.save(buffer, format="JPEG", quality=85)
+                file_content = ContentFile(buffer.getvalue())
+
+                resized_field = getattr(self, f"image_{size_name}")
+                resized_field.save(filename, file_content, save=False)
+
+        except Exception as e:
+            print(f"⚠️ Failed to resize image: {e}")
+
+    def save(self, *args, **kwargs):
+        is_new_image = self.pk is None or self.image_original != self._image_original
+        if is_new_image:
+            for size in IMAGE_SIZES:
+                self.delete_file(getattr(self, f"image_{size}"))
+
+        super().save(*args, **kwargs)  # Save original image
+
+        if is_new_image:
+            self.save_resized_images()
+            super().save(*args, **kwargs)  # Save resized images only if changed
+
+        self._image_original = self.image_original
+
+    def delete(self, *args, **kwargs):
+        # Delete all resized images
+        for size in IMAGE_SIZES:
+            self.delete_file(getattr(self, f"image_{size}"))
+        self.delete_file(self.image_original)
+        super().delete(*args, **kwargs)
 
     def __str__(self):
-        return self.title
+        return self.title or f"Image for {self.park.name}"
 
 
 class Multimedia(models.Model):
@@ -186,11 +285,9 @@ class ExceptionHours(models.Model):
     thursday = models.CharField(max_length=100)
     friday = models.CharField(max_length=100)
     saturday = models.CharField(max_length=100)
-# --- END NPE MODELS --- #
 
 
-# --- MAPS MODELS --- #
-# User uploaded files
+# ---------- File Uploads ----------
 def generate_filepath(instance, filename):
     ext = filename.split('.')[-1]
     new_filename = f"{uuid.uuid4()}.{ext}"
@@ -209,20 +306,19 @@ class UploadedFile(models.Model):
     )
 
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    file = models.FileField(upload_to=generate_filepath, validators=[FileExtensionValidator(allowed_extensions=['gpx', 'fit', 'GPX', 'FIT'], message="Invalid file type.")])
+    file = models.FileField(upload_to=generate_filepath, validators=[
+        FileExtensionValidator(allowed_extensions=['gpx', 'fit', 'GPX', 'FIT'], message="Invalid file type.")
+    ])
     original_filename = models.CharField(max_length=255)
     file_type = models.CharField(max_length=10, choices=FILE_TYPE_CHOICES)
     uploaded_at = models.DateTimeField(auto_now_add=True)
     activity = models.OneToOneField('Gpx_Activity', null=True, blank=True, on_delete=models.SET_NULL)
     parse_error = models.TextField(null=True, blank=True)
-    processing_status = models.CharField(
-        max_length=10,
-        choices=PROCESSING_STATUS,
-        default='pending'
-    )
+    processing_status = models.CharField(max_length=10, choices=PROCESSING_STATUS, default='pending')
 
     def __str__(self):
         return f"{self.original_filename} ({self.file_type.upper()})"
+
 
 class Gpx_Activity(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, default=None)
@@ -230,13 +326,13 @@ class Gpx_Activity(models.Model):
     sport = models.CharField(max_length=50)
     bounds = models.JSONField(null=True, blank=True)
     start_time = models.DateTimeField()
-    total_elapsed_time = models.FloatField() # seconds
-    total_distance = models.FloatField(null=True, blank=True) # meters
+    total_elapsed_time = models.FloatField()
+    total_distance = models.FloatField(null=True, blank=True)
     total_calories = models.IntegerField(null=True, blank=True)
-    total_ascent = models.FloatField(null=True, blank=True) # Meters
-    total_descent = models.FloatField(null=True, blank=True) # Meters
-    avg_heart_rate = models.IntegerField(null=True, blank=True) # bpm
-    avg_cadence = models.IntegerField(null=True, blank=True) # rpm
+    total_ascent = models.FloatField(null=True, blank=True)
+    total_descent = models.FloatField(null=True, blank=True)
+    avg_heart_rate = models.IntegerField(null=True, blank=True)
+    avg_cadence = models.IntegerField(null=True, blank=True)
     geojson = models.JSONField(null=True, blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True, null=True)
 
@@ -244,18 +340,18 @@ class Gpx_Activity(models.Model):
         ordering = ['-start_time']
         db_table = 'activity'
 
+
 class Record(models.Model):
     activity = models.ForeignKey(Gpx_Activity, related_name="records", on_delete=models.CASCADE)
     timestamp = models.DateTimeField()
     position_lat = models.FloatField(null=True, blank=True)
-    position_long = models.FloatField(null=True, blank=True) 
-    altitude = models.FloatField(null=True, blank=True) # m
-    heart_rate = models.IntegerField(null=True, blank=True) # bpm
-    cadence = models.IntegerField(null=True, blank=True) # steps/min
-    speed = models.FloatField(null=True, blank=True)  # m/s
-    distance = models.FloatField(null=True, blank=True) # m
+    position_long = models.FloatField(null=True, blank=True)
+    altitude = models.FloatField(null=True, blank=True)
+    heart_rate = models.IntegerField(null=True, blank=True)
+    cadence = models.IntegerField(null=True, blank=True)
+    speed = models.FloatField(null=True, blank=True)
+    distance = models.FloatField(null=True, blank=True)
     temperature = models.IntegerField(null=True, blank=True)
 
     class Meta:
         ordering = ['timestamp']
-# --- END MAPS MODELS --- #

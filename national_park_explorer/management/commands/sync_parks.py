@@ -4,15 +4,30 @@ from django.core.management.base import BaseCommand
 from django.core.files.base import ContentFile
 from django.conf import settings
 from django.core.files.storage import default_storage
+from django.db import transaction
+import traceback
+from django.utils import timezone
+from PIL import Image
+from io import BytesIO
+import time
+from datetime import datetime
+
+IMAGE_SIZES = {
+    'thumbnail': (150, 150),
+    'small': (400, 300),
+    'medium': (800, 600),
+    'large': (1600, 1200),
+}
 
 from national_park_explorer.models import (
+    SyncLog,
     Park, Activity, Topic,
     Address, PhoneNumber, EmailAddress,
     ParkImage, EntranceFee, EntrancePass,
     OperatingHours, StandardHours, ExceptionHours
 )
 
-API_URL = "https://developer.nps.gov/api/v1/parks"
+API_URL = "https://developer.nps.gov/api/v1/parks?limit=500"
 API_KEY = os.environ.get("NPS_API_KEY") or getattr(settings, "NPS_API_KEY", None)
 
 class Command(BaseCommand):
@@ -144,10 +159,13 @@ class Command(BaseCommand):
                 )
             for exc in (hours.get("exceptions") or []):
                 try:
-                    start = exc["startDate"].split(" ")[0].replace("{ts", "").replace("'", "").strip()
-                    end = exc["endDate"].split(" ")[0].replace("{ts", "").replace("'", "").strip()
+                    start_str = exc.get("startDate", "").split(" ")[0].replace("{ts", "").replace("'", "").strip()
+                    end_str = exc.get("endDate", "").split(" ")[0].replace("{ts", "").replace("'", "").strip()
+                    start = datetime.strptime(start_str, "%Y-%m-%d").date()
+                    end = datetime.strptime(end_str, "%Y-%m-%d").date()
                 except Exception:
-                    start = end = None
+                    start = None
+                    end = None
 
                 exception_hours = exc.get("exceptionHours")
                 if not exception_hours:
@@ -169,11 +187,6 @@ class Command(BaseCommand):
 
         # Sync images: delete old images from DB and filesystem
         for image in park.images.all():
-            if image.image:
-                try:
-                    default_storage.delete(image.image.name)
-                except Exception as e:
-                    self.stderr.write(f"⚠️ Could not delete image file: {image.image.name} – {e}")
             image.delete()
 
         # Download and store new images
@@ -182,82 +195,75 @@ class Command(BaseCommand):
             if not image_url:
                 continue
 
-            try:
-                response = requests.get(image_url, timeout=10)
-                response.raise_for_status()
+            retries = 3
+            for attempt in range(retries):
+                try:
+                    response = requests.get(image_url, timeout=10)
+                    response.raise_for_status()
 
-                content = ContentFile(response.content)
-                filename = os.path.basename(image_url)
-
-                img_obj = ParkImage(
-                    park=park,
-                    title=image_data.get("title", ""),
-                    altText=image_data.get("altText", ""),
-                    caption=image_data.get("caption", ""),
-                    credit=image_data.get("credit", "")
-                )
-                img_obj.image.save(filename, content, save=True)
-
-            except Exception as e:
-                self.stderr.write(f"⚠️ Failed to download image for {park.name}: {e}")
+                    original_filename = os.path.basename(image_url).split("?")[0]
+                    img_obj = ParkImage(
+                        park=park,
+                        title=image_data.get("title", ""),
+                        altText=image_data.get("altText", ""),
+                        caption=image_data.get("caption", ""),
+                        credit=image_data.get("credit", "")
+                    )
+                    img_obj.image_original.save(original_filename, ContentFile(response.content), save=True)  # triggers resizing
+                    break  # success
+                except Exception as e:
+                    if attempt < retries - 1:
+                        time.sleep(1.5)
+                    else:
+                        self.stderr.write(f"⚠️ Failed to download/process image for {park.name}: {e}")
 
         self.stdout.write(self.style.SUCCESS(f"✅ Synced park: {park.fullName}"))
 
+    
+    def fetch_parks_from_api(self, test=False):
+            url = f"{API_URL}&parkCode=yell" if test else API_URL
+            response = requests.get(url, headers={"X-Api-Key": API_KEY})
+            response.raise_for_status()
+            return response.json().get("data", [])
+        
     def handle(self, *args, **options):
         if not API_KEY:
-            self.stderr.write("❌ Missing NPS_API_KEY in environment or settings.")
+            self.stderr.write("❌ Missing NPS_API_KEY. Set it in environment or settings.")
             return
+        
+        log = SyncLog.objects.create()
 
-        headers = {"X-Api-Key": API_KEY}
+        success_count = 0
+        fail_count = 0
+        errors = []
 
-        if options['test']:
-            self.stdout.write("🔍 Running in test mode: syncing one park (Yellowstone)...")
+        try:
+            parks_data = self.fetch_parks_from_api(test=options['test'])
 
-            test_params = {
-                "parkCode": "yell",  # Yellowstone
-                "limit": 1
-            }
+            for park_data in parks_data:
+                try:
+                    with transaction.atomic():  # Each park is isolated
+                        self.sync_park(park_data)
+                    success_count += 1
+                except Exception as e:
+                    park_name = park_data.get('fullName', 'Unknown')
+                    self.stderr.write(f"❌ Error syncing {park_name}")
+                    self.stderr.write(traceback.format_exc())
+                    errors.append(f"{park_name}: {str(e)}")
+                    fail_count += 1
 
-            response = requests.get(API_URL, headers=headers, params=test_params)
-            if response.status_code != 200:
-                self.stderr.write(f"❌ Error fetching test park: {response.status_code}")
-                return
+            log.success = True
+        except Exception as e:
+            log.success = False
+            errors.append(f"General failure: {str(e)}")
+        finally:
+            log.end_time = timezone.now()
+            log.parks_processed = success_count + fail_count
+            log.parks_failed = fail_count
+            log.error_summary = "\n".join(errors[:10])  # Truncate long error logs
+            log.save()
 
-            parks = response.json().get("data", [])
-            if not parks:
-                self.stderr.write("❌ No park data found.")
-                return
-
-            self.sync_park(parks[0])
-            self.stdout.write(self.style.SUCCESS("🎉 Test park synced."))
-            return
-
-        params = {
-            "limit": 50,
-            "start": 0
-        }
-
-        total_parks_synced = 0
-
-        while True:
-            response = requests.get(API_URL, headers=headers, params=params)
-            if response.status_code != 200:
-                self.stderr.write(f"❌ Error fetching parks: {response.status_code}")
-                return
-
-            result = response.json()
-            parks = result.get("data", [])
-
-            if not parks:
-                break
-
-            for park_data in parks:
-                self.sync_park(park_data)
-                total_parks_synced += 1
-
-            if len(parks) < params["limit"]:
-                break
-
-            params["start"] += params["limit"]
-
-        self.stdout.write(self.style.SUCCESS(f"🎉 Total parks synced: {total_parks_synced}"))
+        if fail_count:
+            self.stderr.write(f"⚠️ Finished with {fail_count} failure(s)")
+        else:
+            self.stdout.write("✅ All parks synced successfully.")

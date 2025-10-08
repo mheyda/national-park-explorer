@@ -65,17 +65,41 @@ class EmailAddressSerializer(serializers.ModelSerializer):
 
 
 class ParkImageSerializer(serializers.ModelSerializer):
-    url = serializers.SerializerMethodField()
+    image_original = serializers.SerializerMethodField()
+    image_thumbnail = serializers.SerializerMethodField()
+    image_small = serializers.SerializerMethodField()
+    image_medium = serializers.SerializerMethodField()
+    image_large = serializers.SerializerMethodField()
 
     class Meta:
         model = ParkImage
-        fields = ['id', 'title', 'altText', 'caption', 'credit', 'url']
+        fields = [
+            'id', 'title', 'altText', 'caption', 'credit',
+            'image_original', 'image_thumbnail', 'image_small', 'image_medium', 'image_large'
+        ]
 
-    def get_url(self, obj):
+    def get_image_url(self, image_field):
         request = self.context.get('request')
-        if obj.image and hasattr(obj.image, 'url'):
-            return request.build_absolute_uri(obj.image.url)
+        if image_field and hasattr(image_field, 'url'):
+            if request:
+                return request.build_absolute_uri(image_field.url)
+            return image_field.url
         return None
+
+    def get_image_original(self, obj):
+        return self.get_image_url(obj.image_original)
+
+    def get_image_thumbnail(self, obj):
+        return self.get_image_url(obj.image_thumbnail)
+
+    def get_image_small(self, obj):
+        return self.get_image_url(obj.image_small)
+
+    def get_image_medium(self, obj):
+        return self.get_image_url(obj.image_medium)
+
+    def get_image_large(self, obj):
+        return self.get_image_url(obj.image_large)
 
 
 class EntranceFeeSerializer(serializers.ModelSerializer):
@@ -140,10 +164,10 @@ class ParkSerializer(serializers.ModelSerializer):
         ]
 
     def get_contacts(self, obj):
-        return [{
+        return {
             'phoneNumbers': PhoneNumberSerializer(obj.phone_numbers.all(), many=True).data,
             'emailAddresses': EmailAddressSerializer(obj.email_addresses.all(), many=True).data,
-        }]
+        }
 
 class FileUploadSerializer(serializers.ModelSerializer):
 
