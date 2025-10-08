@@ -6,6 +6,7 @@ import geojson
 from django.utils import timezone
 from fitparse import FitFile
 from django.db import transaction
+from django.core.paginator import Paginator
 from django.core.cache import cache
 from django.conf import settings
 from django.http import JsonResponse
@@ -13,10 +14,10 @@ from rest_framework.decorators import api_view, permission_classes, parser_class
 from rest_framework.response import Response
 from rest_framework import filters, permissions, status
 from rest_framework.permissions import IsAuthenticated
-from rest_framework.parsers import MultiPartParser
+from rest_framework.parsers import MultiPartParser, JSONParser
 from rest_framework_simplejwt.views import TokenObtainPairView
-from .serializers import MyTokenObtainPairSerializer, CustomUserSerializer, FileUploadSerializer
-from .models import CustomUser, Favorite, Visited, UploadedFile, Activity, Record
+from .serializers import MyTokenObtainPairSerializer, CustomUserSerializer, ParkSerializer, FileUploadSerializer
+from .models import CustomUser, Favorite, Visited, Park, UploadedFile, Gpx_Activity, Record
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 import os
@@ -53,12 +54,23 @@ def getWeather(request):
 # Get park data
 @api_view(['GET'])
 def getParks(request):
-    start = request.query_params.get('start')
-    limit = request.query_params.get('limit')
-    sort = request.query_params.get('sort')
-    stateCode = request.query_params.get('stateCode')
-    parks = requests.get(f'https://developer.nps.gov/api/v1/parks?start={start}&limit={limit}&sort={sort}&stateCode={stateCode}&api_key={settings.NPS_API_KEY}').json()
-    return Response(parks)
+    start = int(request.query_params.get('start', 0))
+    limit = int(request.query_params.get('limit', 50))
+
+    parks = Park.objects.all().order_by('fullName')
+    paginator = Paginator(parks, limit)
+
+    page_number = (start // limit) + 1
+    page = paginator.get_page(page_number)
+
+    serializer = ParkSerializer(page.object_list, many=True, context={'request': request})
+
+    return Response({
+        'total': str(parks.count()),
+        'data': serializer.data,
+        'limit': str(limit),
+        'start': str(start)
+    })
 
 
 # Get user information
@@ -185,15 +197,23 @@ class ObtainTokenPairWithClaims(TokenObtainPairView):
 class LogoutAndBlacklistRefreshTokenForUserView(APIView):
     permission_classes = (permissions.AllowAny,)
     authentication_classes = ()
+    parser_classes = [JSONParser]
 
     def post(self, request):
         try:
-            refresh_token = request.data['refresh']
+            print("Type of request.data:", type(request.data))
+            print("request.data =", request.data)
+            refresh_token = request.data.get('refresh')
             token = RefreshToken(refresh_token)
+
+            if not refresh_token:
+                return Response({'detail': 'Refresh token not provided.'}, status=status.HTTP_400_BAD_REQUEST)
+            
             token.blacklist()
             return Response(status=status.HTTP_205_RESET_CONTENT)
-        except Exception:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            logger.exception("Logout/blacklist failed")
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class CustomUserCreate(APIView):
@@ -421,7 +441,7 @@ def upload_file(request):
                         if not activity_name:
                             activity_name = filename.rsplit('.', 1)[0]
 
-                        activity = Activity.objects.create(
+                        activity = Gpx_Activity.objects.create(
                             user=request.user,
                             name=activity_name,
                             sport=sport_name,
@@ -595,7 +615,7 @@ def upload_file(request):
                         else:
                             activity_name = filename.rsplit('.', 1)[0] # Fallback to filename without extension
 
-                        activity = Activity.objects.create(
+                        activity = Gpx_Activity.objects.create(
                             user=request.user,
                             name=activity_name,
                             sport='',

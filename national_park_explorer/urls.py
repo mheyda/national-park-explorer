@@ -1,4 +1,6 @@
 from django.urls import path
+from django.conf import settings
+from django.conf.urls.static import static
 from .views import index, getWeather, getParks, user_info, favorites, visited, upload_file, get_file_stats, get_geojson, ObtainTokenPairWithClaims, CustomUserCreate, LogoutAndBlacklistRefreshTokenForUserView
 from rest_framework_simplejwt import views as jwt_views
 
@@ -16,4 +18,4 @@ urlpatterns = [
     path('token/obtain/', ObtainTokenPairWithClaims.as_view(), name='token_create'),  
     path('token/refresh/', jwt_views.TokenRefreshView.as_view(), name='token_refresh'),
     path('blacklist/', LogoutAndBlacklistRefreshTokenForUserView.as_view(), name='blacklist')
-]
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
