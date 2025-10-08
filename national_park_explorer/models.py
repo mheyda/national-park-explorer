@@ -102,7 +102,7 @@ class PhoneNumber(models.Model):
 class EmailAddress(models.Model):
     park = models.ForeignKey(Park, on_delete=models.CASCADE, related_name='email_addresses')
     emailAddress = models.EmailField()
-    description = models.CharField(max_length=255, blank=True, null=True)
+    description = models.CharField(max_length=1024, blank=True, null=True)
 
     def __str__(self):
         return self.emailAddress

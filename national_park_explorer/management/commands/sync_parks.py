@@ -92,6 +92,10 @@ class Command(BaseCommand):
                 type=phone.get("type", "")
             )
         for email in contacts.get("emailAddresses", []):
+            email_value = email.get('emailAddress', '')
+
+            if len(email_value) > 255:
+                print(f"⚠️ Email too long ({len(email_value)} chars): {email_value}")
             EmailAddress.objects.create(
                 park=park,
                 emailAddress=email.get("emailAddress", ""),
