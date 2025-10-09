@@ -7,6 +7,7 @@ from .models import (
     CustomUser, Favorite, Visited,
     Activity, Topic, Park, Address, PhoneNumber, EmailAddress, ParkImage, Multimedia, EntranceFee, EntrancePass, OperatingHours, StandardHours, ExceptionHours,
     Alert, Campground,
+    TextChunk,
     UploadedFile, Gpx_Activity, Record
 )
 
@@ -113,6 +114,18 @@ class CampgroundAdmin(admin.ModelAdmin):
         return "-"
     directions_overview_short.short_description = 'Directions Overview'
 
+
+# ------- Text chunking --------
+@admin.register(TextChunk)
+class TextChunkAdmin(admin.ModelAdmin):
+    list_display = ('source_type', 'source_uuid', 'chunk_index', 'short_text', 'created_at')
+    search_fields = ('source_uuid', 'chunk_text')
+    list_filter = ('source_type',)
+    readonly_fields = ('embedding', 'created_at')
+
+    def short_text(self, obj):
+        return obj.chunk_text[:75] + ("..." if len(obj.chunk_text) > 75 else "")
+    short_text.short_description = 'Chunk Preview'
 
 @admin.register(UploadedFile)
 class FileAdmin(admin.ModelAdmin):
