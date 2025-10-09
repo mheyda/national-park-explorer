@@ -136,7 +136,6 @@ class Command(BaseCommand):
                     self.stderr.write(f"\n❌ Failed to process campground ID {cg_id}: {e}")
                     self.stderr.write(traceback.format_exc())  # Full stack trace
 
-                    # 👇 Debug long field values (likely causing the issue)
                     self.stderr.write("🔍 Field lengths for debugging:")
                     field_data = {
                         "campground_id": cg_id,
@@ -158,11 +157,7 @@ class Command(BaseCommand):
                         "fire_stove_policy": fire_stove_policy,
                         "rv_info": rv_info,
                     }
-
-                    for field, value in field_data.items():
-                        if isinstance(value, str) and len(value) > 255:
-                            self.stderr.write(f"⚠️ Field '{field}' is too long: {len(value)} characters")
-
+                    
             start += limit
             self.stdout.write(f"✅ Imported {len(campgrounds)} campgrounds (total so far: {total_imported})")
 

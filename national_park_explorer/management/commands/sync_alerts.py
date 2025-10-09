@@ -75,7 +75,6 @@ class Command(BaseCommand):
                     self.stderr.write(f"\n❌ Failed to process alert ID {alert_id}: {e}")
                     self.stderr.write(traceback.format_exc())
 
-                    # 👇 Log all string fields that may be too long or malformed
                     self.stderr.write("🔍 Field lengths for debugging:")
                     field_data = {
                         "alert_id": alert_id,
@@ -86,12 +85,6 @@ class Command(BaseCommand):
                         "park_code": alert.get("parkCode"),
                         "last_updated": alert.get("lastIndexedDate"),
                     }
-
-                    for field, value in field_data.items():
-                        if isinstance(value, str):
-                            self.stderr.write(f"  • {field}: {len(value)} characters")
-                            if len(value) > 255:
-                                self.stderr.write(f"    ⚠️ Field '{field}' is too long (>255)")
 
             start += limit
             self.stdout.write(f"✅ Imported {len(alerts)} alerts in this batch (total so far: {total_imported})")

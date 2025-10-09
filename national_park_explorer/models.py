@@ -292,12 +292,12 @@ class ExceptionHours(models.Model):
 class Alert(models.Model):
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     alert_id = models.TextField(unique=True)
-    title = models.CharField(max_length=255)
+    title = models.CharField(max_length=2000)
     description = models.TextField(blank=True, null=True)
-    category = models.CharField(max_length=100, blank=True, null=True)
-    url = models.URLField(max_length=1024, blank=True, null=True)
-    park_code = models.CharField(max_length=100)
-    last_updated = models.DateTimeField(max_length=500, blank=True, null=True)
+    category = models.CharField(max_length=2000, blank=True, null=True)
+    url = models.URLField(max_length=2000, blank=True, null=True)
+    park_code = models.CharField(max_length=2000)
+    last_updated = models.DateTimeField(blank=True, null=True)
     raw_data = models.JSONField(blank=True, null=True)
 
     def __str__(self):
