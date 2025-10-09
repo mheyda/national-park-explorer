@@ -296,7 +296,7 @@ class Alert(models.Model):
     description = models.TextField(blank=True, null=True)
     category = models.CharField(max_length=100, blank=True, null=True)
     url = models.URLField(max_length=1024, blank=True, null=True)
-    park_code = models.CharField(max_length=20)
+    park_code = models.CharField(max_length=100)
     last_updated = models.DateTimeField(max_length=500, blank=True, null=True)
     raw_data = models.JSONField(blank=True, null=True)
 
@@ -307,7 +307,7 @@ class Alert(models.Model):
 class Campground(models.Model):
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     campground_id = models.TextField(unique=True)
-    park_code = models.CharField(max_length=10, db_index=True)
+    park_code = models.CharField(max_length=100, db_index=True)
     name = models.CharField(max_length=1024)
     url = models.URLField(max_length=1024, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
@@ -316,7 +316,7 @@ class Campground(models.Model):
     last_updated = models.DateTimeField(blank=True, null=True)
 
     # Flattened contact info (just storing first phone and email for simplicity)
-    phone_number = models.CharField(max_length=50, blank=True, null=True)
+    phone_number = models.CharField(max_length=100, blank=True, null=True)
     phone_description = models.CharField(max_length=1024, blank=True, null=True)
     email = models.EmailField(blank=True, null=True)
     email_description = models.CharField(max_length=1024, blank=True, null=True)
