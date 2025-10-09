@@ -2,66 +2,62 @@
 # BUILDER #
 ###########
 
-# pull official base image
 FROM python:3.10 AS builder
 
-# set work directory
 WORKDIR /home/app/web
 
-# set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# install system dependencies
+# System deps
 RUN apt-get update && \
     apt-get install -y --no-install-recommends gcc
 
-# lint
-RUN pip install --upgrade pip
-RUN pip install flake8==6.0.0
-COPY . /usr/src/app/
-
-# install python dependencies
 COPY ./requirements.txt .
-RUN pip wheel --no-cache-dir --no-deps --wheel-dir /usr/src/app/wheels -r requirements.txt
+RUN pip install --upgrade pip
+RUN pip wheel --no-cache-dir --no-deps --wheel-dir /wheels -r requirements.txt
 
 
 #########
 # FINAL #
 #########
 
-# pull official base image
 FROM python:3.10
 
-# create directory for the app user
-RUN mkdir -p /home/app
-
-# create the app user
-RUN addgroup --system app && adduser --system --group app
-
-# create the appropriate directories
 ENV HOME=/home/app
 ENV APP_HOME=/home/app/web
-RUN mkdir $APP_HOME
 WORKDIR $APP_HOME
 
+# === HuggingFace Cache Setup ===
+ENV HF_HOME=/tmp/huggingface
 ENV TRANSFORMERS_CACHE=/tmp/huggingface
+ENV SENTENCE_TRANSFORMERS_HOME=/tmp/huggingface
+
 RUN mkdir -p /tmp/huggingface && chmod -R 777 /tmp/huggingface
 
-# install dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends netcat-traditional
-COPY --from=builder /usr/src/app/wheels /wheels
-COPY --from=builder /usr/src/app/requirements.txt .
-RUN pip install --upgrade pip
-RUN pip install --no-cache /wheels/*
+# Optional: Create .cache folder for app user too
+RUN mkdir -p /home/app/.cache && chmod -R 777 /home/app/.cache
 
-# copy project
+# System deps
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq-dev netcat-traditional \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy dependencies from builder
+COPY --from=builder /wheels /wheels
+COPY --from=builder /home/app/web/requirements.txt .
+RUN pip install --upgrade pip
+RUN pip install --no-cache-dir /wheels/*
+
+# Copy project
 COPY . $APP_HOME
 
-# chown all the files to the app user
-RUN chown -R app:app $APP_HOME
+# Create user and set ownership
+RUN addgroup --system app && adduser --system --group app
+RUN chown -R app:app /home/app
 
-# change to the app user
+# Use non-root user
 USER app
 
+# Collect static files (optional)
 RUN python manage.py collectstatic --noinput

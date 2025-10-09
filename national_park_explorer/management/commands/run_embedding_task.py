@@ -30,7 +30,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         self.stdout.write("🔍 Loading embedding model...")
-        model = SentenceTransformer("all-MiniLM-L6-v2")
+        model = SentenceTransformer("all-MiniLM-L6-v2", cache_folder="/tmp/huggingface")
 
         # === Process Alerts ===
         self.stdout.write("⚙️ Embedding Alerts...")
