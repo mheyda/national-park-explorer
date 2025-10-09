@@ -1,11 +1,12 @@
 from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
-from .views import index, getWeather, getParks, user_info, favorites, visited, upload_file, get_file_stats, get_geojson, ObtainTokenPairWithClaims, CustomUserCreate, LogoutAndBlacklistRefreshTokenForUserView
+from .views import index, ask_question, getWeather, getParks, user_info, favorites, visited, upload_file, get_file_stats, get_geojson, ObtainTokenPairWithClaims, CustomUserCreate, LogoutAndBlacklistRefreshTokenForUserView
 from rest_framework_simplejwt import views as jwt_views
 
 urlpatterns = [
     path('', index, name='index'),
+    path('api/ask', ask_question, name='ask-question'),
     path("getWeather/", getWeather, name="getWeather"),
     path("getParks/", getParks, name="getParks"),
     path("user/info/", user_info, name='user_info'),

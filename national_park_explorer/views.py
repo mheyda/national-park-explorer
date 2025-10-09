@@ -17,14 +17,18 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, JSONParser
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .serializers import MyTokenObtainPairSerializer, CustomUserSerializer, ParkSerializer, FileUploadSerializer
-from .models import CustomUser, Favorite, Visited, Park, UploadedFile, Gpx_Activity, Record
+from .models import CustomUser, Favorite, Visited, Park, TextChunk, UploadedFile, Gpx_Activity, Record
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
+from sentence_transformers import SentenceTransformer
+import torch
 import os
 import logging
 import xml.etree.ElementTree as ET
 
 logger = logging.getLogger(__name__)
+embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+LLM_SERVER_URL = "http://<LLM_EC2_IP>:8000/generate"  # LLM server endpoint
 
 
 # Render home page
@@ -40,6 +44,76 @@ def handler404(request, exception):
 # 500 Error Page
 def handler500(request, exception):
     return render(request, '500.html', status=500)
+
+
+# AI Chatbot
+def get_top_chunks(query, k=5):
+    query_embedding = embedding_model.encode(query)
+    query_vector = torch.tensor(query_embedding).tolist()
+
+    return TextChunk.objects\
+        .extra(where=["embedding <#> %s"], params=[query_vector])\
+        .order_by('embedding <#> %s')[:k]
+
+
+def build_prompt(query, chunks):
+    context = "\n\n".join(chunk.chunk_text for chunk in chunks)
+    return f"""
+        You are a helpful assistant answering questions about US National Parks.
+
+        Use the following context to answer the question.
+
+        {context}
+
+        Question: {query}
+        Answer:
+        """.strip()
+
+
+@api_view(['POST'])
+def ask_question(request):
+    user_question = request.data.get("question", "")
+    debug = request.data.get("debug", False)
+
+    if not user_question:
+        return Response({"error": "Missing 'question' in request."}, status=400)
+
+    try:
+        chunks = get_top_chunks(user_question, k=5)
+        prompt = build_prompt(user_question, chunks)
+
+        if debug:
+            return Response({
+                "question": user_question,
+                "retrieved_chunks": [
+                    {
+                        "chunk_index": chunk.chunk_index,
+                        "source_type": chunk.source_type,
+                        "source_uuid": str(chunk.source_uuid),
+                        "chunk_text": chunk.chunk_text[:500] + ("..." if len(chunk.chunk_text) > 500 else "")
+                    }
+                    for chunk in chunks
+                ],
+                "prompt": prompt
+            })
+
+        # ---- Future: Call actual LLM server here ----
+        llm_response = requests.post(
+            LLM_SERVER_URL,
+            json={"prompt": prompt},
+            timeout=30
+        )
+
+        if llm_response.status_code != 200:
+            return Response({"error": "LLM server error", "details": llm_response.text}, status=502)
+
+        return Response({
+            "question": user_question,
+            "answer": llm_response.json().get("response", "").strip()
+        })
+
+    except Exception as e:
+        return Response({"error": str(e)}, status=500)
 
 
 # Get weather data
