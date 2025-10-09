@@ -297,7 +297,7 @@ class Alert(models.Model):
     category = models.CharField(max_length=100, blank=True, null=True)
     url = models.URLField(blank=True, null=True)
     park_code = models.CharField(max_length=20)
-    last_updated = models.DateTimeField(blank=True, null=True)
+    last_updated = models.DateTimeField(max_length=500, blank=True, null=True)
     raw_data = models.JSONField(blank=True, null=True)
 
     def __str__(self):
@@ -309,7 +309,7 @@ class Campground(models.Model):
     campground_id = models.CharField(max_length=500, unique=True)
     park_code = models.CharField(max_length=10, db_index=True)
     name = models.CharField(max_length=255)
-    url = models.URLField(blank=True, null=True)
+    url = models.URLField(max_length=500, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
     latitude = models.FloatField(blank=True, null=True)
     longitude = models.FloatField(blank=True, null=True)
