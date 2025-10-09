@@ -21,7 +21,7 @@ from .models import CustomUser, Favorite, Visited, Park, TextChunk, UploadedFile
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from sentence_transformers import SentenceTransformer
-import torch
+from django.db.models.expressions import RawSQL
 import os
 import logging
 import xml.etree.ElementTree as ET
@@ -47,13 +47,20 @@ def handler500(request, exception):
 
 
 # AI Chatbot
-def get_top_chunks(query, k=5):
-    query_embedding = embedding_model.encode(query)
-    query_vector = torch.tensor(query_embedding).tolist()
+def get_top_chunks(query_embedding, k=5):
+    # Assuming query_embedding is a list or numpy array representing the vector
+    query_embedding_str = "{" + ",".join(f"{x:.6f}" for x in query_embedding) + "}"
 
-    return TextChunk.objects\
-        .extra(where=["embedding <#> %s"], params=[query_vector])\
-        .order_by('embedding <#> %s')[:k]
+    chunks = (
+        TextChunk.objects.annotate(
+            similarity=RawSQL(
+                "embedding <#> %s", 
+                (query_embedding_str,)
+            )
+        )
+        .order_by('similarity')[:k]
+    )
+    return chunks
 
 
 def build_prompt(query, chunks):
@@ -79,7 +86,8 @@ def ask_question(request):
         return Response({"error": "Missing 'question' in request."}, status=400)
 
     try:
-        chunks = get_top_chunks(user_question, k=5)
+        query_embedding = embedding_model.encode(user_question).tolist()
+        chunks = get_top_chunks(query_embedding, k=5)
         prompt = build_prompt(user_question, chunks)
 
         if debug:
@@ -97,15 +105,17 @@ def ask_question(request):
                 "prompt": prompt
             })
 
-        # ---- Future: Call actual LLM server here ----
-        llm_response = requests.post(
-            LLM_SERVER_URL,
-            json={"prompt": prompt},
-            timeout=30
-        )
-
-        if llm_response.status_code != 200:
-            return Response({"error": "LLM server error", "details": llm_response.text}, status=502)
+        # Call LLM server
+        try:
+            llm_response = requests.post(
+                LLM_SERVER_URL,
+                json={"prompt": prompt},
+                timeout=30
+            )
+            llm_response.raise_for_status()
+        except requests.RequestException as e:
+            logger.error(f"LLM server request failed: {e}")
+            return Response({"error": "LLM server is unavailable."}, status=502)
 
         return Response({
             "question": user_question,
@@ -113,6 +123,7 @@ def ask_question(request):
         })
 
     except Exception as e:
+        logger.exception("Error in ask_question")
         return Response({"error": str(e)}, status=500)
 
 
