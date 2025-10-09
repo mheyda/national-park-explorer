@@ -48,8 +48,7 @@ def handler500(request, exception):
 
 # AI Chatbot
 def get_top_chunks(query_embedding, k=5):
-    # Assuming query_embedding is a list or numpy array representing the vector
-    query_embedding_str = "{" + ",".join(f"{x:.6f}" for x in query_embedding) + "}"
+    query_embedding_str = "[" + ",".join(f"{x:.6f}" for x in query_embedding) + "]"
 
     chunks = (
         TextChunk.objects.annotate(
