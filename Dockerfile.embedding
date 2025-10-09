@@ -13,8 +13,8 @@ RUN apt-get update && apt-get install -y \
     && mkdir -p /tmp/huggingface && chmod -R 777 /tmp/huggingface
 
 # Copy requirements, install dependencies (add your embedding libs here)
-COPY requirements-embedding.txt ./requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements-embedding.txt requirements-embedding.txt
+RUN pip install --no-cache-dir -r requirements-embedding.txt
 
 # Copy your code
 COPY . .
