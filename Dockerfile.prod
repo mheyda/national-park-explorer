@@ -45,6 +45,9 @@ ENV APP_HOME=/home/app/web
 RUN mkdir $APP_HOME
 WORKDIR $APP_HOME
 
+ENV TRANSFORMERS_CACHE=/tmp/huggingface
+RUN mkdir -p /tmp/huggingface && chmod -R 777 /tmp/huggingface
+
 # install dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends netcat-traditional
 COPY --from=builder /usr/src/app/wheels /wheels
