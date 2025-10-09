@@ -291,7 +291,7 @@ class ExceptionHours(models.Model):
 # ---------- /alerts NPS API endpoint data -------------
 class Alert(models.Model):
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
-    alert_id = models.CharField(max_length=100, unique=True)
+    alert_id = models.CharField(max_length=500, unique=True)
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
     category = models.CharField(max_length=100, blank=True, null=True)
@@ -306,7 +306,7 @@ class Alert(models.Model):
 # ---------- /campgrounds NPS API endpoint data -------------
 class Campground(models.Model):
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
-    campground_id = models.CharField(max_length=100, unique=True)
+    campground_id = models.CharField(max_length=500, unique=True)
     park_code = models.CharField(max_length=10, db_index=True)
     name = models.CharField(max_length=255)
     url = models.URLField(blank=True, null=True)
