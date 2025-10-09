@@ -2,8 +2,10 @@ FROM python:3.10-slim
 
 WORKDIR /home/app/web
 
+ENV TRANSFORMERS_CACHE=/tmp/huggingface
+
 # Install system dependencies if needed
-RUN apt-get update && apt-get install -y build-essential
+RUN apt-get update && apt-get install -y build-essential && mkdir -p /tmp/huggingface && chmod -R 777 /tmp/huggingface
 
 # Copy requirements, install dependencies (add your embedding libs here)
 COPY requirements.txt .
