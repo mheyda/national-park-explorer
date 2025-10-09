@@ -1,0 +1,16 @@
+FROM python:3.10-slim
+
+WORKDIR /home/app/web
+
+# Install system dependencies if needed
+RUN apt-get update && apt-get install -y build-essential
+
+# Copy requirements, install dependencies (add your embedding libs here)
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy your code
+COPY . .
+
+# Default command could be a script to run embedding or an interactive shell
+CMD ["python", "manage.py", "run_embedding_task"]

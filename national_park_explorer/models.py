@@ -8,6 +8,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import FileExtensionValidator
 from django.core.files.base import ContentFile
+from pgvector.django import VectorField
 
 # Constants
 IMAGE_SIZES = {
@@ -285,6 +286,87 @@ class ExceptionHours(models.Model):
     thursday = models.CharField(max_length=100)
     friday = models.CharField(max_length=100)
     saturday = models.CharField(max_length=100)
+
+
+# ---------- /alerts NPS API endpoint data -------------
+class Alert(models.Model):
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    alert_id = models.CharField(max_length=100, unique=True)
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    category = models.CharField(max_length=100, blank=True, null=True)
+    url = models.URLField(blank=True, null=True)
+    park_code = models.CharField(max_length=20)
+    last_updated = models.DateTimeField(blank=True, null=True)
+    raw_data = models.JSONField(blank=True, null=True)
+
+    def __str__(self):
+        return self.title
+
+# ---------- /campgrounds NPS API endpoint data -------------
+class Campground(models.Model):
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    campground_id = models.CharField(max_length=100, unique=True)
+    park_code = models.CharField(max_length=10, db_index=True)
+    name = models.CharField(max_length=255)
+    url = models.URLField(blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
+    latitude = models.FloatField(blank=True, null=True)
+    longitude = models.FloatField(blank=True, null=True)
+    last_updated = models.DateTimeField(blank=True, null=True)
+
+    # Flattened contact info (just storing first phone and email for simplicity)
+    phone_number = models.CharField(max_length=50, blank=True, null=True)
+    phone_description = models.CharField(max_length=255, blank=True, null=True)
+    email = models.EmailField(blank=True, null=True)
+    email_description = models.CharField(max_length=255, blank=True, null=True)
+
+    # Directions overview and url
+    directions_overview = models.TextField(blank=True, null=True)
+    directions_url = models.URLField(blank=True, null=True)
+
+    # Accessibility and connectivity info
+    cell_phone_info = models.CharField(max_length=255, blank=True, null=True)
+    internet_info = models.CharField(max_length=255, blank=True, null=True)
+    wheelchair_access = models.CharField(max_length=255, blank=True, null=True)
+    fire_stove_policy = models.TextField(blank=True, null=True)
+    rv_allowed = models.BooleanField(default=False)
+    rv_info = models.TextField(blank=True, null=True)
+    rv_max_length = models.IntegerField(blank=True, null=True)
+    trailer_allowed = models.BooleanField(default=False)
+    trailer_max_length = models.IntegerField(blank=True, null=True)
+
+    # Raw JSON data saved for any additional info
+    raw_data = models.JSONField()
+
+    def __str__(self):
+        return self.name
+
+
+# ------ Text chunking for LLM ------
+# national_park_explorer/models.py (or your chosen app)
+class TextChunk(models.Model):
+    SOURCE_CHOICES = [
+        ('alert', 'Alert'),
+        ('campground', 'Campground'),
+    ]
+
+    source_type = models.CharField(max_length=20, choices=SOURCE_CHOICES)
+    source_uuid = models.UUIDField(null=True, blank=True)
+    chunk_index = models.IntegerField()  # position of chunk in original text
+    chunk_text = models.TextField()
+    embedding = VectorField()  # all-MiniLM-L6-v2 output dim
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('source_type', 'source_uuid', 'chunk_index')
+        indexes = [
+            models.Index(fields=['source_type', 'source_uuid']),
+        ]
+
+    def __str__(self):
+        return f"{self.source_type} #{self.source_uuid} - chunk {self.chunk_index}"
 
 
 # ---------- File Uploads ----------

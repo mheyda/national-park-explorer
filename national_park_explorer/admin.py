@@ -5,9 +5,8 @@ from django.utils.html import format_html
 from .models import (
     SyncLog,
     CustomUser, Favorite, Visited,
-    Activity, Topic, Park, Address, PhoneNumber, EmailAddress,
-    ParkImage, Multimedia, EntranceFee, EntrancePass,
-    OperatingHours, StandardHours, ExceptionHours,
+    Activity, Topic, Park, Address, PhoneNumber, EmailAddress, ParkImage, Multimedia, EntranceFee, EntrancePass, OperatingHours, StandardHours, ExceptionHours,
+    Alert, Campground,
     UploadedFile, Gpx_Activity, Record
 )
 
@@ -89,6 +88,30 @@ class StandardHoursAdmin(admin.ModelAdmin):
 @admin.register(ExceptionHours)
 class ExceptionHoursAdmin(admin.ModelAdmin):
     list_display = ('operating_hours', 'name', 'startDate', 'endDate')
+
+
+# -------- /alert NPS API endpoint data ----------
+@admin.register(Alert)
+class AlertAdmin(admin.ModelAdmin):
+    list_display = ("title", "category", "park_code", "last_updated", "url")
+    search_fields = ("title", "description", "park_code", "category")
+    list_filter = ("category", "park_code")
+    ordering = ("-last_updated",)
+
+# ------- /campgrounds NPS API endpoint data ---------
+@admin.register(Campground)
+class CampgroundAdmin(admin.ModelAdmin):
+    list_display = ('name', 'park_code', 'phone_number', 'email', 'directions_overview_short', 'cell_phone_info', 'internet_info', 'wheelchair_access', 'rv_allowed', 'last_updated')
+    search_fields = ('name', 'park_code', 'phone_number', 'email')
+    list_filter = ('park_code', 'rv_allowed',)
+
+    readonly_fields = ('raw_data',)
+
+    def directions_overview_short(self, obj):
+        if obj.directions_overview:
+            return obj.directions_overview[:75] + ("..." if len(obj.directions_overview) > 75 else "")
+        return "-"
+    directions_overview_short.short_description = 'Directions Overview'
 
 
 @admin.register(UploadedFile)
