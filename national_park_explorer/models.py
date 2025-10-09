@@ -307,28 +307,28 @@ class Alert(models.Model):
 class Campground(models.Model):
     uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
     campground_id = models.TextField(unique=True)
-    park_code = models.CharField(max_length=100, db_index=True)
-    name = models.CharField(max_length=1024)
-    url = models.URLField(max_length=1024, blank=True, null=True)
+    park_code = models.CharField(max_length=2000, db_index=True)
+    name = models.CharField(max_length=2000)
+    url = models.URLField(max_length=2000, blank=True, null=True)
     description = models.TextField(blank=True, null=True)
     latitude = models.FloatField(blank=True, null=True)
     longitude = models.FloatField(blank=True, null=True)
     last_updated = models.DateTimeField(blank=True, null=True)
 
     # Flattened contact info (just storing first phone and email for simplicity)
-    phone_number = models.CharField(max_length=100, blank=True, null=True)
-    phone_description = models.CharField(max_length=1024, blank=True, null=True)
+    phone_number = models.CharField(max_length=2000, blank=True, null=True)
+    phone_description = models.CharField(max_length=2000, blank=True, null=True)
     email = models.EmailField(blank=True, null=True)
-    email_description = models.CharField(max_length=1024, blank=True, null=True)
+    email_description = models.CharField(max_length=2000, blank=True, null=True)
 
     # Directions overview and url
     directions_overview = models.TextField(blank=True, null=True)
     directions_url = models.URLField(blank=True, null=True)
 
     # Accessibility and connectivity info
-    cell_phone_info = models.CharField(max_length=1024, blank=True, null=True)
-    internet_info = models.CharField(max_length=1024, blank=True, null=True)
-    wheelchair_access = models.CharField(max_length=1024, blank=True, null=True)
+    cell_phone_info = models.CharField(max_length=2000, blank=True, null=True)
+    internet_info = models.CharField(max_length=2000, blank=True, null=True)
+    wheelchair_access = models.CharField(max_length=2000, blank=True, null=True)
     fire_stove_policy = models.TextField(blank=True, null=True)
     rv_allowed = models.BooleanField(default=False)
     rv_info = models.TextField(blank=True, null=True)
