@@ -14,6 +14,11 @@ try:
 except LookupError:
     nltk.download("punkt")
 
+try:
+    nltk.data.find("tokenizers/punkt_tab")
+except LookupError:
+    nltk.download("punkt_tab")
+
 # Configs
 CHUNK_CHAR_LIMIT = 500
 USE_SENTENCE_CHUNKING = True
