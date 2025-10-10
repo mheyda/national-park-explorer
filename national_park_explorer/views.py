@@ -57,11 +57,15 @@ def handler500(request, exception):
 
 
 # AI Chatbot
-def get_top_chunks(query_embedding, k=20):
+def get_top_chunks(query_embedding, k=20, source_type=None):
     query_embedding_str = "[" + ",".join(f"{x:.6f}" for x in query_embedding) + "]"
+    queryset = TextChunk.objects.all()
+
+    if source_type:
+        queryset = queryset.filter(source_type=source_type)
 
     chunks = (
-        TextChunk.objects.annotate(
+        queryset.annotate(
             similarity=RawSQL("embedding <#> %s", (query_embedding_str,))
         )
         .order_by("similarity")[:k]
