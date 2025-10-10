@@ -341,21 +341,82 @@ class Campground(models.Model):
 
     def __str__(self):
         return self.name
+    
+# ---------- /parks NPS API endpoint data -------------
+class Park_Data(models.Model):
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    park_id = models.TextField(unique=True)  # Same as "id" field from API
+    park_code = models.CharField(max_length=100, db_index=True)
+    
+    full_name = models.CharField(max_length=2000)
+    name = models.CharField(max_length=1000)
+    designation = models.CharField(max_length=500, blank=True, null=True)
+    description = models.TextField(blank=True, null=True)
+    
+    url = models.URLField(max_length=2000, blank=True, null=True)
+    directions_info = models.TextField(blank=True, null=True)
+    directions_url = models.URLField(max_length=2000, blank=True, null=True)
+    weather_info = models.TextField(blank=True, null=True)
+
+    # Location
+    latitude = models.FloatField(blank=True, null=True)
+    longitude = models.FloatField(blank=True, null=True)
+    states = models.CharField(max_length=200, blank=True, null=True)
+
+    # Contact info (first of each type for simplicity)
+    phone_number = models.CharField(max_length=100, blank=True, null=True)
+    phone_type = models.CharField(max_length=100, blank=True, null=True)
+    email = models.EmailField(blank=True, null=True)
+
+    # Mailing address (flattened)
+    mailing_address_line1 = models.CharField(max_length=1000, blank=True, null=True)
+    mailing_address_line2 = models.CharField(max_length=1000, blank=True, null=True)
+    mailing_city = models.CharField(max_length=200, blank=True, null=True)
+    mailing_state = models.CharField(max_length=20, blank=True, null=True)
+    mailing_postal_code = models.CharField(max_length=20, blank=True, null=True)
+
+    # Activities and topics (stored as simple lists)
+    activity_names = models.JSONField(blank=True, null=True)  # e.g., ["Hiking", "Camping"]
+    topic_names = models.JSONField(blank=True, null=True)
+
+    # Entrance fees (simplified: first one stored explicitly)
+    entrance_fee_title = models.CharField(max_length=500, blank=True, null=True)
+    entrance_fee_cost = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
+    entrance_fee_description = models.TextField(blank=True, null=True)
+
+    # Entrance pass (first one only)
+    entrance_pass_title = models.CharField(max_length=500, blank=True, null=True)
+    entrance_pass_cost = models.DecimalField(max_digits=6, decimal_places=2, blank=True, null=True)
+    entrance_pass_description = models.TextField(blank=True, null=True)
+
+    # Images (first image only for simplicity)
+    image_url = models.URLField(max_length=2000, blank=True, null=True)
+    image_title = models.CharField(max_length=1000, blank=True, null=True)
+    image_alt_text = models.CharField(max_length=1000, blank=True, null=True)
+    image_caption = models.TextField(blank=True, null=True)
+
+    last_updated = models.DateTimeField(blank=True, null=True)
+
+    raw_data = models.JSONField()  # Store the full API response
+
+    def __str__(self):
+        return self.full_name
 
 
 # ------ Text chunking for LLM ------
-# national_park_explorer/models.py (or your chosen app)
 class TextChunk(models.Model):
     SOURCE_CHOICES = [
         ('alert', 'Alert'),
         ('campground', 'Campground'),
+        ('park_data', 'Park_Data'),
     ]
 
     source_type = models.CharField(max_length=20, choices=SOURCE_CHOICES)
     source_uuid = models.UUIDField(null=True, blank=True)
-    chunk_index = models.IntegerField()  # position of chunk in original text
+    chunk_index = models.IntegerField()
     chunk_text = models.TextField()
-    embedding = VectorField()  # all-MiniLM-L6-v2 output dim
+    embedding = VectorField()
+    chunk_type = models.CharField(max_length=50, blank=True, null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -367,7 +428,7 @@ class TextChunk(models.Model):
 
     def __str__(self):
         return f"{self.source_type} #{self.source_uuid} - chunk {self.chunk_index}"
-
+    
 
 # ---------- File Uploads ----------
 def generate_filepath(instance, filename):

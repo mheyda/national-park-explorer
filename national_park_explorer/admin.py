@@ -6,7 +6,7 @@ from .models import (
     SyncLog,
     CustomUser, Favorite, Visited,
     Activity, Topic, Park, Address, PhoneNumber, EmailAddress, ParkImage, Multimedia, EntranceFee, EntrancePass, OperatingHours, StandardHours, ExceptionHours,
-    Alert, Campground,
+    Alert, Campground, Park_Data,
     TextChunk,
     UploadedFile, Gpx_Activity, Record
 )
@@ -114,6 +114,12 @@ class CampgroundAdmin(admin.ModelAdmin):
         return "-"
     directions_overview_short.short_description = 'Directions Overview'
 
+@admin.register(Park_Data)
+class ParkDataAdmin(admin.ModelAdmin):
+    list_display = ('full_name', 'park_code', 'designation', 'states', 'phone_number', 'email', 'last_updated')
+    search_fields = ('full_name', 'park_code', 'states', 'designation')
+    list_filter = ('states', 'designation')
+    readonly_fields = ('uuid', 'last_updated')
 
 # ------- Text chunking --------
 @admin.register(TextChunk)

@@ -22,6 +22,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from sentence_transformers import SentenceTransformer
 from django.db.models.expressions import RawSQL
+from collections import defaultdict
 import os
 import logging
 import xml.etree.ElementTree as ET
@@ -29,7 +30,7 @@ import xml.etree.ElementTree as ET
 logger = logging.getLogger(__name__)
 embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
 LLM_SERVER_URL = "http://<LLM_EC2_IP>:8000/generate"  # LLM server endpoint
-
+MAX_QUESTION_LENGTH = 1000
 
 # Render home page
 def index(request):
@@ -47,38 +48,57 @@ def handler500(request, exception):
 
 
 # AI Chatbot
-def get_top_chunks(query_embedding, k=5):
+def get_top_chunks(query_embedding, k=5, source_type=None, chunk_type=None):
     query_embedding_str = "[" + ",".join(f"{x:.6f}" for x in query_embedding) + "]"
 
+    queryset = TextChunk.objects.all()
+
+    if source_type:
+        queryset = queryset.filter(source_type=source_type)
+    if chunk_type:
+        queryset = queryset.filter(chunk_type=chunk_type)
+
     chunks = (
-        TextChunk.objects.annotate(
-            similarity=RawSQL(
-                "embedding <#> %s", 
-                (query_embedding_str,)
-            )
+        queryset.annotate(
+            similarity=RawSQL("embedding <#> %s", (query_embedding_str,))
         )
-        .order_by('similarity')[:k]
+        .order_by("similarity")[:k]
     )
+
     return chunks
 
 
 def build_prompt(query, chunks):
-    context = "\n\n".join(chunk.chunk_text for chunk in chunks)
+    context = "\n\n".join(
+        f"[{chunk.source_type.upper()}] {chunk.chunk_text}" for chunk in chunks
+    )
     return f"""
-        You are a helpful assistant answering questions about US National Parks.
+You are a helpful US park ranger answering questions about US National Parks, Monuments, Historical Sites, and other sites in the National Park System.
 
-        Use the following context to answer the question.
+Use the following context to answer the question.
 
-        {context}
+{context}
 
-        Question: {query}
-        Answer:
-        """.strip()
+Question: {query}
+Answer:
+    """.strip()
 
+def limit_chunks_per_source(chunks, max_per_source=2, k=10):
+    limited = []
+    seen = defaultdict(int)
+
+    for chunk in chunks:
+        if seen[chunk.source_uuid] < max_per_source:
+            limited.append(chunk)
+            seen[chunk.source_uuid] += 1
+        if len(limited) >= k:
+            break
+    return limited
 
 @api_view(['POST'])
 def ask_question(request):
     user_question = request.data.get("question", "")
+    user_question = user_question[:MAX_QUESTION_LENGTH].strip()
     debug = request.data.get("debug", False)
 
     if not user_question:
@@ -86,7 +106,10 @@ def ask_question(request):
 
     try:
         query_embedding = embedding_model.encode(user_question).tolist()
-        chunks = get_top_chunks(query_embedding, k=5)
+        source_type = request.data.get("source_type")
+        chunk_type = request.data.get("chunk_type")
+        chunks = get_top_chunks(query_embedding, k=10, source_type=source_type, chunk_type=chunk_type)
+        chunks = limit_chunks_per_source(chunks, max_per_source=2, k=10)
         prompt = build_prompt(user_question, chunks)
 
         if debug:
