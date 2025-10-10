@@ -6,10 +6,13 @@ from national_park_explorer.models import Alert, Campground, Park_Data, TextChun
 from django.db import transaction
 from tqdm import tqdm
 import nltk
+from nltk.tokenize import sent_tokenize
 import logging
 
-nltk.download('punkt')
-from nltk.tokenize import sent_tokenize
+try:
+    nltk.data.find("tokenizers/punkt")
+except LookupError:
+    nltk.download("punkt")
 
 # Configs
 CHUNK_CHAR_LIMIT = 500
