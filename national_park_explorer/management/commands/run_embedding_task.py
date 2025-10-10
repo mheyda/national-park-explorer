@@ -70,14 +70,18 @@ class Command(BaseCommand):
         # === Alerts ===
         self.stdout.write("⚙️ Embedding Alerts...")
         for alert in tqdm(Alert.objects.all(), desc="Processing Alerts"):
-            combined_text = self._build_alert_text(alert)
-            self._embed_instance(model, alert, "alert", combined_text)
+            chunk_map = self._build_alert_chunks(alert)
+            for chunk_type, text in chunk_map.items():
+                if text:
+                    self._embed_instance(model, alert, "alert", text, chunk_type)
 
         # === Campgrounds ===
         self.stdout.write("⚙️ Embedding Campgrounds...")
         for cg in tqdm(Campground.objects.all(), desc="Processing Campgrounds"):
-            combined_text = self._build_campground_text(cg)
-            self._embed_instance(model, cg, "campground", combined_text)
+            chunk_map = self._build_campground_chunks(cg)
+            for chunk_type, text in chunk_map.items():
+                if text:
+                    self._embed_instance(model, cg, "campground", text, chunk_type)
 
         # === Parks ===
         self.stdout.write("⚙️ Embedding Parks...")
@@ -89,27 +93,39 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS("✅ Embedding complete."))
 
-    def _build_alert_text(self, alert):
-        return "\n".join(filter(None, [
-            f"[Alert] {alert.title}",
-            alert.description,
-            f"Category: {alert.category}",
-            f"Park Code: {alert.park_code}",
-            alert.url,
-        ]))
+    def _build_alert_chunks(self, alert):
+        return {
+            "description": "\n".join(filter(None, [
+                f"[Alert] {alert.title}",
+                alert.description,
+            ])),
+            "metadata": "\n".join(filter(None, [
+                f"Category: {alert.category}",
+                f"Park Code: {alert.park_code}",
+                alert.url,
+            ])),
+        }
 
-    def _build_campground_text(self, cg):
-        return "\n".join(filter(None, [
-            f"[Campground] {cg.name}",
-            cg.description,
-            f"Directions: {cg.directions_overview}",
-            f"URL: {cg.directions_url}",
-            f"Cell Info: {cg.cell_phone_info}",
-            f"Internet: {cg.internet_info}",
-            f"Wheelchair Access: {cg.wheelchair_access}",
-            f"Fire Policy: {cg.fire_stove_policy}",
-            f"RV Info: {cg.rv_info}",
-        ]))
+    def _build_campground_chunks(self, cg):
+        return {
+            "description": "\n".join(filter(None, [
+                f"[Campground] {cg.name}",
+                cg.description,
+            ])),
+            "accessibility": "\n".join(filter(None, [
+                f"Wheelchair Access: {cg.wheelchair_access}",
+                f"RV Info: {cg.rv_info}",
+            ])),
+            "directions": "\n".join(filter(None, [
+                f"Directions: {cg.directions_overview}",
+                f"URL: {cg.directions_url}",
+            ])),
+            "amenities": "\n".join(filter(None, [
+                f"Cell Info: {cg.cell_phone_info}",
+                f"Internet: {cg.internet_info}",
+            ])),
+            "fire_policy": cg.fire_stove_policy,
+        }
 
     def _build_park_chunks(self, park):
         activity_str = ", ".join(park.activity_names or [])
@@ -161,4 +177,5 @@ class Command(BaseCommand):
                     chunk_text=chunk,
                     embedding=embedding.tolist(),
                     chunk_type=chunk_type,
+                    relevance_tags=[chunk_type] if chunk_type else [],
                 )

@@ -48,7 +48,7 @@ def handler500(request, exception):
 
 
 # AI Chatbot
-def get_top_chunks(query_embedding, k=5, source_type=None, chunk_type=None):
+def get_top_chunks(query_embedding, k=10, source_type=None, chunk_type=None, relevance_tag=None, min_similarity=0.2):
     query_embedding_str = "[" + ",".join(f"{x:.6f}" for x in query_embedding) + "]"
 
     queryset = TextChunk.objects.all()
@@ -57,11 +57,14 @@ def get_top_chunks(query_embedding, k=5, source_type=None, chunk_type=None):
         queryset = queryset.filter(source_type=source_type)
     if chunk_type:
         queryset = queryset.filter(chunk_type=chunk_type)
+    if relevance_tag:
+        queryset = queryset.filter(relevance_tags__contains=[relevance_tag])
 
     chunks = (
         queryset.annotate(
             similarity=RawSQL("embedding <#> %s", (query_embedding_str,))
         )
+        .filter(similarity__lte=min_similarity)  # Assuming lower similarity = better match for your pgvector config
         .order_by("similarity")[:k]
     )
 
@@ -70,7 +73,7 @@ def get_top_chunks(query_embedding, k=5, source_type=None, chunk_type=None):
 
 def build_prompt(query, chunks):
     context = "\n\n".join(
-        f"[{chunk.source_type.upper()}] {chunk.chunk_text}" for chunk in chunks
+        f"[{chunk.source_type.upper()} - {chunk.chunk_type or 'general'}] {chunk.chunk_text}" for chunk in chunks
     )
     return f"""
 You are a helpful US park ranger answering questions about US National Parks, Monuments, Historical Sites, and other sites in the National Park System.
@@ -106,9 +109,40 @@ def ask_question(request):
 
     try:
         query_embedding = embedding_model.encode(user_question).tolist()
+        
+        # Prefer relevant chunk types if not explicitly provided
         source_type = request.data.get("source_type")
         chunk_type = request.data.get("chunk_type")
-        chunks = get_top_chunks(query_embedding, k=10, source_type=source_type, chunk_type=chunk_type)
+
+        # Use default relevant chunk types for open-ended questions
+        preferred_relevance_tags = ["activities", "description", "topics", "directions"] if not chunk_type else [chunk_type]
+
+        chunks = []
+        seen_uuids = set()
+
+        for tag in preferred_relevance_tags:
+            found = get_top_chunks(
+                query_embedding,
+                k=5,
+                source_type=source_type,
+                relevance_tag=tag,
+                min_similarity=0.3,  # widen if necessary
+            )
+            for chunk in found:
+                if chunk.source_uuid not in seen_uuids:
+                    chunks.append(chunk)
+                    seen_uuids.add(chunk.source_uuid)
+
+            if len(chunks) >= 10:
+                break
+
+        # Fallback: get general results if still under 10
+        if len(chunks) < 10:
+            extra = get_top_chunks(query_embedding, k=10 - len(chunks), source_type=source_type)
+            for chunk in extra:
+                if chunk.source_uuid not in seen_uuids:
+                    chunks.append(chunk)
+
         chunks = limit_chunks_per_source(chunks, max_per_source=2, k=10)
         prompt = build_prompt(user_question, chunks)
 

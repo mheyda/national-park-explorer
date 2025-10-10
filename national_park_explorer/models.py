@@ -9,6 +9,7 @@ from django.contrib.auth.models import AbstractUser
 from django.core.validators import FileExtensionValidator
 from django.core.files.base import ContentFile
 from pgvector.django import VectorField
+from django.contrib.postgres.fields import ArrayField
 
 # Constants
 IMAGE_SIZES = {
@@ -417,6 +418,7 @@ class TextChunk(models.Model):
     chunk_text = models.TextField()
     embedding = VectorField()
     chunk_type = models.CharField(max_length=50, blank=True, null=True)
+    relevance_tags = ArrayField(models.CharField(max_length=50), default=list, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
 
