@@ -31,6 +31,15 @@ logger = logging.getLogger(__name__)
 embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
 LLM_SERVER_URL = "http://<LLM_EC2_IP>:8000/generate"  # LLM server endpoint
 MAX_QUESTION_LENGTH = 1000
+INTENT_TO_CHUNK_TYPES = {
+    "activities": ["activities", "description"],
+    "weather": ["weather"],
+    "directions": ["directions"],
+    "fees": ["fees"],
+    "contact": ["contact"],
+    "campground": ["description", "directions", "amenities", "accessibility"],
+    "general": ["description", "topics"],
+}
 
 # Render home page
 def index(request):
@@ -48,23 +57,13 @@ def handler500(request, exception):
 
 
 # AI Chatbot
-def get_top_chunks(query_embedding, k=10, source_type=None, chunk_type=None, relevance_tag=None, min_similarity=0.2):
+def get_top_chunks(query_embedding, k=20):
     query_embedding_str = "[" + ",".join(f"{x:.6f}" for x in query_embedding) + "]"
 
-    queryset = TextChunk.objects.all()
-
-    if source_type:
-        queryset = queryset.filter(source_type=source_type)
-    if chunk_type:
-        queryset = queryset.filter(chunk_type=chunk_type)
-    if relevance_tag:
-        queryset = queryset.filter(relevance_tags__contains=[relevance_tag])
-
     chunks = (
-        queryset.annotate(
+        TextChunk.objects.annotate(
             similarity=RawSQL("embedding <#> %s", (query_embedding_str,))
         )
-        .filter(similarity__lte=min_similarity)  # Assuming lower similarity = better match for your pgvector config
         .order_by("similarity")[:k]
     )
 
@@ -98,6 +97,24 @@ def limit_chunks_per_source(chunks, max_per_source=2, k=10):
             break
     return limited
 
+def infer_intent_from_query(query):
+    q = query.lower()
+
+    if any(word in q for word in ["do", "things to do", "activities", "hiking", "explore"]):
+        return "activities"
+    elif "weather" in q:
+        return "weather"
+    elif "directions" in q or "how do i get" in q or "how to get" in q:
+        return "directions"
+    elif "fee" in q or "pass" in q or "cost" in q or "entrance" in q:
+        return "fees"
+    elif "contact" in q or "phone" in q or "email" in q:
+        return "contact"
+    elif "camp" in q or "campground" in q or "rv" in q or "tent" in q:
+        return "campground"
+    else:
+        return "general"
+
 @api_view(['POST'])
 def ask_question(request):
     user_question = request.data.get("question", "")
@@ -109,50 +126,39 @@ def ask_question(request):
 
     try:
         query_embedding = embedding_model.encode(user_question).tolist()
-        
-        # Prefer relevant chunk types if not explicitly provided
         source_type = request.data.get("source_type")
-        chunk_type = request.data.get("chunk_type")
 
-        # Use default relevant chunk types for open-ended questions
-        preferred_relevance_tags = ["activities", "description", "topics", "directions"] if not chunk_type else [chunk_type]
+        # Determine user intent and preferred chunk types
+        intent = infer_intent_from_query(user_question)
+        preferred_chunk_types = INTENT_TO_CHUNK_TYPES.get(intent, ["description"])
 
-        chunks = []
-        seen_uuids = set()
+        # Step 1: Get broader set of top chunks by similarity
+        chunks = get_top_chunks(query_embedding, k=25, source_type=source_type)
 
-        for tag in preferred_relevance_tags:
-            found = get_top_chunks(
-                query_embedding,
-                k=5,
-                source_type=source_type,
-                relevance_tag=tag,
-                min_similarity=0.3,  # widen if necessary
+        # Step 2: Re-rank by chunk type priority and similarity
+        chunks = sorted(
+            chunks,
+            key=lambda c: (
+                0 if c.chunk_type in preferred_chunk_types else 1,
+                getattr(c, 'similarity', 1.0)
             )
-            for chunk in found:
-                if chunk.source_uuid not in seen_uuids:
-                    chunks.append(chunk)
-                    seen_uuids.add(chunk.source_uuid)
+        )
 
-            if len(chunks) >= 10:
-                break
-
-        # Fallback: get general results if still under 10
-        if len(chunks) < 10:
-            extra = get_top_chunks(query_embedding, k=10 - len(chunks), source_type=source_type)
-            for chunk in extra:
-                if chunk.source_uuid not in seen_uuids:
-                    chunks.append(chunk)
-
+        # Step 3: Limit per source and total number
         chunks = limit_chunks_per_source(chunks, max_per_source=2, k=10)
+
+        # Step 4: Build prompt
         prompt = build_prompt(user_question, chunks)
 
         if debug:
             return Response({
                 "question": user_question,
+                "intent": intent,
                 "retrieved_chunks": [
                     {
                         "chunk_index": chunk.chunk_index,
                         "source_type": chunk.source_type,
+                        "chunk_type": chunk.chunk_type,
                         "source_uuid": str(chunk.source_uuid),
                         "chunk_text": chunk.chunk_text[:500] + ("..." if len(chunk.chunk_text) > 500 else "")
                     }
@@ -161,7 +167,7 @@ def ask_question(request):
                 "prompt": prompt
             })
 
-        # Call LLM server
+        # Step 5: Call LLM
         try:
             llm_response = requests.post(
                 LLM_SERVER_URL,
