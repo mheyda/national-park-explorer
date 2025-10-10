@@ -63,20 +63,43 @@ class Command(BaseCommand):
         # === Alerts ===
         self.stdout.write("⚙️ Embedding Alerts...")
         for alert in tqdm(Alert.objects.all(), desc="Processing Alerts"):
+            # Get park name and UUID from Park_Data using alert.park_code
+            try:
+                park = Park_Data.objects.get(park_code=alert.park_code)
+                park_name = park.full_name or park.name
+                park_uuid = park.uuid
+            except Park_Data.DoesNotExist:
+                park_name = "Unknown Park"
+                park_uuid = None
+
             text = "\n".join(filter(None, [
                 f"[Alert] {alert.title}",
+                f"Park: {park_name}",
                 alert.description,
                 f"Category: {alert.category}",
-                f"Park Code: {alert.park_code}",
                 alert.url,
             ]))
-            self._embed_instance(model, alert, "alert", text, "alert_info")
+            
+            relevance_tags = ["alert_info"]
+            if park_uuid:
+                relevance_tags.append(f"park_uuid:{str(park_uuid)}")
+
+            self._embed_instance(model, alert, "alert", text, "alert_info", relevance_tags)
 
         # === Campgrounds ===
         self.stdout.write("⚙️ Embedding Campgrounds...")
         for cg in tqdm(Campground.objects.all(), desc="Processing Campgrounds"):
+            try:
+                park = Park_Data.objects.get(park_code=cg.park_code)
+                park_name = park.full_name or park.name
+                park_uuid = park.uuid
+            except Park_Data.DoesNotExist:
+                park_name = "Unknown Park"
+                park_uuid = None
+
             text = "\n".join(filter(None, [
                 f"[Campground] {cg.name}",
+                f"Park: {park_name}",
                 cg.description,
                 f"Directions: {cg.directions_overview}",
                 f"Wheelchair Access: {cg.wheelchair_access}",
@@ -84,7 +107,12 @@ class Command(BaseCommand):
                 f"Amenities: Cell = {cg.cell_phone_info}, Internet = {cg.internet_info}",
                 f"Fire Policy: {cg.fire_stove_policy}",
             ]))
-            self._embed_instance(model, cg, "campground", text, "campground_info")
+            
+            relevance_tags = ["campground_info"]
+            if park_uuid:
+                relevance_tags.append(f"park_uuid:{str(park_uuid)}")
+
+            self._embed_instance(model, cg, "campground", text, "campground_info", relevance_tags)
 
         # === Parks ===
         self.stdout.write("⚙️ Embedding Parks...")
@@ -108,7 +136,7 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS("✅ Embedding complete."))
 
-    def _embed_instance(self, model, obj, source_type, text, chunk_type=None):
+    def _embed_instance(self, model, obj, source_type, text, chunk_type=None, relevance_tags=None):
         chunks = chunk_text(text)
         if not chunks:
             return
@@ -131,5 +159,6 @@ class Command(BaseCommand):
                     chunk_text=chunk,
                     embedding=embedding.tolist(),
                     chunk_type=chunk_type,
-                    relevance_tags=[chunk_type] if chunk_type else [],
+                    relevance_tags=relevance_tags or ([chunk_type] if chunk_type else []),
                 )
+

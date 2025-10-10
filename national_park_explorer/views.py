@@ -17,7 +17,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, JSONParser
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .serializers import MyTokenObtainPairSerializer, CustomUserSerializer, ParkSerializer, FileUploadSerializer
-from .models import CustomUser, Favorite, Visited, Park, TextChunk, UploadedFile, Gpx_Activity, Record
+from .models import CustomUser, Favorite, Visited, Park, Park_Data, TextChunk, UploadedFile, Gpx_Activity, Record
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from sentence_transformers import SentenceTransformer
@@ -32,7 +32,7 @@ embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
 LLM_SERVER_URL = "http://<LLM_EC2_IP>:8000/generate"  # LLM server endpoint
 MAX_QUESTION_LENGTH = 1000
 INTENT_TO_CHUNK_TYPES = {
-    "activities": ["activities", "description"],
+    "activities": ["activities", "description", "topics"],
     "weather": ["weather"],
     "directions": ["directions"],
     "fees": ["fees"],
@@ -57,22 +57,41 @@ def handler500(request, exception):
 
 
 # AI Chatbot
-def get_top_chunks(query_embedding, k=20, source_type=None):
+def get_park_code_from_question(question):
+    q = question.lower()
+    for park in Park_Data.objects.all():
+        if park.full_name and park.full_name.lower() in q:
+            return park.park_code
+        if park.name and park.name.lower() in q:
+            return park.park_code
+    return None
+
+def rank_chunks_by_intent(chunks, intent):
+    preferred_types = INTENT_TO_CHUNK_TYPES.get(intent, ["description", "topics"])
+
+    def score(chunk):
+        # Lower score is better
+        type_score = 0 if chunk.chunk_type in preferred_types else 1
+        return (type_score, getattr(chunk, 'similarity', 1.0))
+
+    return sorted(chunks, key=score)
+
+def get_top_chunks(query_embedding, k=20, park_code=None):
     query_embedding_str = "[" + ",".join(f"{x:.6f}" for x in query_embedding) + "]"
     queryset = TextChunk.objects.all()
 
-    if source_type:
-        queryset = queryset.filter(source_type=source_type)
+    if park_code:
+        park = Park_Data.objects.filter(park_code=park_code).first()
+        if park:
+            park_uuid_tag = f"park_uuid:{park.uuid}"
+            queryset = queryset.filter(relevance_tags__contains=[park_uuid_tag])
 
-    chunks = (
+    return (
         queryset.annotate(
             similarity=RawSQL("embedding <#> %s", (query_embedding_str,))
         )
         .order_by("similarity")[:k]
     )
-
-    return chunks
-
 
 def build_prompt(query, chunks):
     context = "\n\n".join(
@@ -132,39 +151,36 @@ def ask_question(request):
         query_embedding = embedding_model.encode(user_question).tolist()
         source_type = request.data.get("source_type")
 
-        # Determine user intent and preferred chunk types
+        # Determine user intent and park
         intent = infer_intent_from_query(user_question)
-        preferred_chunk_types = INTENT_TO_CHUNK_TYPES.get(intent, ["description"])
+        park_code = get_park_code_from_question(user_question)
 
-        # Step 1: Get broader set of top chunks by similarity
-        chunks = get_top_chunks(query_embedding, k=25, source_type=source_type)
+        # Step 1: Get top chunks scoped to the correct park
+        chunks = get_top_chunks(query_embedding, k=10, park_code=park_code)
 
-        # Step 2: Re-rank by chunk type priority and similarity
-        chunks = sorted(
-            chunks,
-            key=lambda c: (
-                0 if c.chunk_type in preferred_chunk_types else 1,
-                getattr(c, 'similarity', 1.0)
-            )
-        )
+        # Optional: filter out useless types
+        if intent not in ["contact", "fees", "directions"]:
+            chunks = [c for c in chunks if c.chunk_type not in ["contact", "fees", "directions", "metadata"]]
 
-        # Step 3: Limit per source and total number
+        # Step 2: Limit per source
         chunks = limit_chunks_per_source(chunks, max_per_source=2, k=10)
 
-        # Step 4: Build prompt
+        # Step 3: Build prompt
         prompt = build_prompt(user_question, chunks)
 
         if debug:
             return Response({
                 "question": user_question,
                 "intent": intent,
+                "matched_park_code": park_code,
                 "retrieved_chunks": [
                     {
                         "chunk_index": chunk.chunk_index,
                         "source_type": chunk.source_type,
                         "chunk_type": chunk.chunk_type,
                         "source_uuid": str(chunk.source_uuid),
-                        "chunk_text": chunk.chunk_text[:500] + ("..." if len(chunk.chunk_text) > 500 else "")
+                        "chunk_text": chunk.chunk_text[:1000] + ("..." if len(chunk.chunk_text) > 1000 else ""),
+                        "similarity": getattr(chunk, "similarity", None)
                     }
                     for chunk in chunks
                 ],
