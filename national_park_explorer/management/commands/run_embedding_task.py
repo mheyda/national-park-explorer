@@ -14,13 +14,8 @@ try:
 except LookupError:
     nltk.download("punkt")
 
-try:
-    nltk.data.find("tokenizers/punkt_tab")
-except LookupError:
-    nltk.download("punkt_tab")
-
 # Configs
-CHUNK_CHAR_LIMIT = 500
+CHUNK_CHAR_LIMIT = 900  # Larger chunks!
 USE_SENTENCE_CHUNKING = True
 
 logger = logging.getLogger(__name__)
@@ -31,7 +26,6 @@ def chunk_text(text, max_chars=CHUNK_CHAR_LIMIT, use_sentence_chunking=USE_SENTE
         return []
 
     if not use_sentence_chunking:
-        # Simple character-based
         chunks = []
         while len(text) > max_chars:
             split_index = text.rfind(" ", 0, max_chars)
@@ -59,7 +53,6 @@ def chunk_text(text, max_chars=CHUNK_CHAR_LIMIT, use_sentence_chunking=USE_SENTE
         chunks.append(current_chunk.strip())
     return chunks
 
-
 class Command(BaseCommand):
     help = "Chunk and embed Alerts, Campgrounds, and Parks using all-MiniLM-L6-v2"
 
@@ -70,96 +63,57 @@ class Command(BaseCommand):
         # === Alerts ===
         self.stdout.write("⚙️ Embedding Alerts...")
         for alert in tqdm(Alert.objects.all(), desc="Processing Alerts"):
-            chunk_map = self._build_alert_chunks(alert)
-            for chunk_type, text in chunk_map.items():
-                if text:
-                    self._embed_instance(model, alert, "alert", text, chunk_type)
+            text = "\n".join(filter(None, [
+                f"[Alert] {alert.title}",
+                alert.description,
+                f"Category: {alert.category}",
+                f"Park Code: {alert.park_code}",
+                alert.url,
+            ]))
+            self._embed_instance(model, alert, "alert", text, "alert_info")
 
         # === Campgrounds ===
         self.stdout.write("⚙️ Embedding Campgrounds...")
         for cg in tqdm(Campground.objects.all(), desc="Processing Campgrounds"):
-            chunk_map = self._build_campground_chunks(cg)
-            for chunk_type, text in chunk_map.items():
-                if text:
-                    self._embed_instance(model, cg, "campground", text, chunk_type)
+            text = "\n".join(filter(None, [
+                f"[Campground] {cg.name}",
+                cg.description,
+                f"Directions: {cg.directions_overview}",
+                f"Wheelchair Access: {cg.wheelchair_access}",
+                f"RV Info: {cg.rv_info}",
+                f"Amenities: Cell = {cg.cell_phone_info}, Internet = {cg.internet_info}",
+                f"Fire Policy: {cg.fire_stove_policy}",
+            ]))
+            self._embed_instance(model, cg, "campground", text, "campground_info")
 
         # === Parks ===
         self.stdout.write("⚙️ Embedding Parks...")
         for park in tqdm(Park_Data.objects.all(), desc="Processing Parks"):
-            chunk_map = self._build_park_chunks(park)
-            for chunk_type, text in chunk_map.items():
-                if text:
-                    self._embed_instance(model, park, "park", text, chunk_type)
+            activity_str = ", ".join(park.activity_names or [])
+            topic_str = ", ".join(park.topic_names or [])
 
-        self.stdout.write(self.style.SUCCESS("✅ Embedding complete."))
-
-    def _build_alert_chunks(self, alert):
-        return {
-            "description": "\n".join(filter(None, [
-                f"[Alert] {alert.title}",
-                alert.description,
-            ])),
-            "metadata": "\n".join(filter(None, [
-                f"Category: {alert.category}",
-                f"Park Code: {alert.park_code}",
-                alert.url,
-            ])),
-        }
-
-    def _build_campground_chunks(self, cg):
-        return {
-            "description": "\n".join(filter(None, [
-                f"[Campground] {cg.name}",
-                cg.description,
-            ])),
-            "accessibility": "\n".join(filter(None, [
-                f"Wheelchair Access: {cg.wheelchair_access}",
-                f"RV Info: {cg.rv_info}",
-            ])),
-            "directions": "\n".join(filter(None, [
-                f"Directions: {cg.directions_overview}",
-                f"URL: {cg.directions_url}",
-            ])),
-            "amenities": "\n".join(filter(None, [
-                f"Cell Info: {cg.cell_phone_info}",
-                f"Internet: {cg.internet_info}",
-            ])),
-            "fire_policy": cg.fire_stove_policy,
-        }
-
-    def _build_park_chunks(self, park):
-        activity_str = ", ".join(park.activity_names or [])
-        topic_str = ", ".join(park.topic_names or [])
-
-        return {
-            "description": "\n".join(filter(None, [
+            text = "\n".join(filter(None, [
                 f"[Park] {park.full_name or park.name}",
                 park.description,
-            ])),
-            "directions": "\n".join(filter(None, [
+                f"Activities: {activity_str}" if activity_str else None,
+                f"Topics: {topic_str}" if topic_str else None,
                 f"Directions: {park.directions_info}",
-                f"URL: {park.directions_url}",
-            ])),
-            "weather": park.weather_info,
-            "activities": f"Activities: {activity_str}" if activity_str else None,
-            "topics": f"Topics: {topic_str}" if topic_str else None,
-            "fees": "\n".join(filter(None, [
+                f"Weather Info: {park.weather_info}",
                 f"Entrance Fee: {park.entrance_fee_title} - {park.entrance_fee_description} (${park.entrance_fee_cost})",
                 f"Entrance Pass: {park.entrance_pass_title} - {park.entrance_pass_description} (${park.entrance_pass_cost})",
-            ])),
-            "contact": "\n".join(filter(None, [
-                f"Phone: {park.phone_number} ({park.phone_type})",
-                f"Email: {park.email}",
-                f"Mailing Address: {park.mailing_address_line1}, {park.mailing_city}, {park.mailing_state} {park.mailing_postal_code}",
-            ])),
-        }
+                f"Contact: {park.phone_number} ({park.phone_type}), Email: {park.email}",
+                f"Address: {park.mailing_address_line1}, {park.mailing_city}, {park.mailing_state} {park.mailing_postal_code}",
+            ]))
+            self._embed_instance(model, park, "park", text, "park_overview")
+
+        self.stdout.write(self.style.SUCCESS("✅ Embedding complete."))
 
     def _embed_instance(self, model, obj, source_type, text, chunk_type=None):
         chunks = chunk_text(text)
         if not chunks:
             return
 
-        # Remove any existing entries for this object
+        # Clear existing chunks
         TextChunk.objects.filter(source_type=source_type, source_uuid=obj.uuid).delete()
 
         try:
