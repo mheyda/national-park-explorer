@@ -9,7 +9,7 @@ from django.db import transaction
 from django.core.paginator import Paginator
 from django.core.cache import cache
 from django.conf import settings
-from django.http import JsonResponse
+from django.http import JsonResponse, StreamingHttpResponse
 from rest_framework.decorators import api_view, permission_classes, parser_classes
 from rest_framework.response import Response
 from rest_framework import filters, permissions, status
@@ -196,17 +196,22 @@ def ask_question(request):
             llm_response = requests.post(
                 LLM_SERVER_URL,
                 json={"messages": chat_messages},
-                timeout=30
+                stream=True,  # <--- Important
+                timeout=60
             )
             llm_response.raise_for_status()
+
+            def stream_llm():
+                for chunk in llm_response.iter_content(chunk_size=1024):
+                    if chunk:
+                        yield chunk
+
+            return StreamingHttpResponse(stream_llm(), content_type="text/plain")
+
         except requests.RequestException as e:
             logger.error(f"LLM server request failed: {e}")
             return Response({"error": "LLM server is unavailable."}, status=502)
 
-        return Response({
-            "question": user_question,
-            "answer": llm_response.json().get("response", "").strip()
-        })
 
     except Exception as e:
         logger.exception("Error in ask_question")
