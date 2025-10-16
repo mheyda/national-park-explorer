@@ -93,20 +93,24 @@ def get_top_chunks(query_embedding, k=20, park_code=None):
         .order_by("similarity")[:k]
     )
 
-def build_prompt(query, chunks):
+def build_chat_messages(query, chunks):
     context = "\n\n".join(
         f"[{chunk.source_type.upper()} - {chunk.chunk_type or 'general'}] {chunk.chunk_text}" for chunk in chunks
     )
-    return f"""
-You are a helpful US park ranger answering questions about US National Parks, Monuments, Historical Sites, and other sites in the National Park System.
 
-Use the following context to answer the question.
+    system_prompt = (
+        "You are a helpful US park ranger answering questions about US National Parks, "
+        "Monuments, Historical Sites, and other sites in the National Park System. "
+        "Use the following context to answer the user's question."
+    )
 
-{context}
+    user_prompt = f"{context}\n\n{query}"
 
-Question: {query}
-Answer:
-    """.strip()
+    return [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt}
+    ]
+
 
 def limit_chunks_per_source(chunks, max_per_source=2, k=10):
     limited = []
@@ -166,7 +170,7 @@ def ask_question(request):
         chunks = limit_chunks_per_source(chunks, max_per_source=2, k=10)
 
         # Step 3: Build prompt
-        prompt = build_prompt(user_question, chunks)
+        chat_messages = build_chat_messages(user_question, chunks)
 
         if debug:
             return Response({
@@ -184,14 +188,14 @@ def ask_question(request):
                     }
                     for chunk in chunks
                 ],
-                "prompt": prompt
+                "chat_messages": chat_messages
             })
 
         # Step 5: Call LLM
         try:
             llm_response = requests.post(
                 LLM_SERVER_URL,
-                json={"prompt": prompt},
+                json={"messages": chat_messages},
                 timeout=30
             )
             llm_response.raise_for_status()
