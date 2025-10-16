@@ -94,17 +94,22 @@ def get_top_chunks(query_embedding, k=20, park_code=None):
     )
 
 def build_chat_messages(query, chunks):
-    context = "\n\n".join(
-        f"[{chunk.source_type.upper()} - {chunk.chunk_type or 'general'}] {chunk.chunk_text}" for chunk in chunks
-    )
+    context_lines = []
+
+    for i, chunk in enumerate(chunks, start=1):
+        label = f"{chunk.source_type.upper()} - {chunk.chunk_type or 'general'}"
+        content = chunk.chunk_text.strip().replace("\n", " ")
+        context_lines.append(f"{i}. [{label}]: {content}")
+
+    context = "\n".join(context_lines)
 
     system_prompt = (
         "You are a helpful US park ranger answering questions about US National Parks, "
         "Monuments, Historical Sites, and other sites in the National Park System. "
-        "Use the following context to answer the user's question."
+        "Use the numbered context information to answer the user's question clearly and accurately."
     )
 
-    user_prompt = f"{context}\n\n{query}"
+    user_prompt = f"Context:\n{context}\n\nQuestion:\n{query}"
 
     return [
         {"role": "system", "content": system_prompt},
