@@ -29,7 +29,7 @@ import xml.etree.ElementTree as ET
 
 logger = logging.getLogger(__name__)
 embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
-LLM_SERVER_URL = "http://<LLM_EC2_IP>:8000/generate"  # LLM server endpoint
+LLM_SERVER_URL = "http://18.188.127.81:5000/infer"  # LLM server endpoint
 MAX_QUESTION_LENGTH = 1000
 INTENT_TO_CHUNK_TYPES = {
     "activities": ["activities", "description", "topics"],
@@ -160,14 +160,14 @@ def ask_question(request):
         park_code = get_park_code_from_question(user_question)
 
         # Step 1: Get top chunks scoped to the correct park
-        chunks = get_top_chunks(query_embedding, k=10, park_code=park_code)
+        chunks = get_top_chunks(query_embedding, k=5, park_code=park_code)
 
         # Optional: filter out useless types
         if intent not in ["contact", "fees", "directions"]:
             chunks = [c for c in chunks if c.chunk_type not in ["contact", "fees", "directions", "metadata"]]
 
         # Step 2: Limit per source
-        chunks = limit_chunks_per_source(chunks, max_per_source=2, k=10)
+        chunks = limit_chunks_per_source(chunks, max_per_source=2, k=5)
 
         # Step 3: Build prompt
         chat_messages = build_chat_messages(user_question, chunks)
