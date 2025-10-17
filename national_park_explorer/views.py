@@ -29,7 +29,7 @@ import xml.etree.ElementTree as ET
 
 logger = logging.getLogger(__name__)
 embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
-LLM_SERVER_URL = "http://18.188.127.81:5000/infer"  # LLM server endpoint
+LLM_SERVER_URL = "http://18.223.121.77:5000/infer"  # LLM server endpoint
 MAX_QUESTION_LENGTH = 1000
 INTENT_TO_CHUNK_TYPES = {
     "activities": ["activities", "description", "topics"],
@@ -201,8 +201,8 @@ def ask_question(request):
             llm_response = requests.post(
                 LLM_SERVER_URL,
                 json={"messages": chat_messages},
-                stream=True,  # <--- Important
-                timeout=60
+                stream=True,
+                timeout=300
             )
             llm_response.raise_for_status()
 
