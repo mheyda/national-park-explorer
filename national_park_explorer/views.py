@@ -165,16 +165,20 @@ def ask_question(request):
         park_code = get_park_code_from_question(user_question)
 
         # Step 1: Get top chunks scoped to the correct park
-        chunks = get_top_chunks(query_embedding, k=5, park_code=park_code)
+        raw_chunks = get_top_chunks(query_embedding, k=20, park_code=park_code)
 
-        # Optional: filter out useless types
+        # Step 2: Filter chunks by similarity (lower is better)
+        SIMILARITY_THRESHOLD = 0.35  # adjust as needed (experiment)
+        filtered_chunks = [c for c in raw_chunks if getattr(c, "similarity", 1.0) <= SIMILARITY_THRESHOLD]
+
+        # Step 3: Optionally filter out unwanted types based on intent
         if intent not in ["contact", "fees", "directions"]:
-            chunks = [c for c in chunks if c.chunk_type not in ["contact", "fees", "directions", "metadata"]]
+            filtered_chunks = [c for c in filtered_chunks if c.chunk_type not in ["contact", "fees", "directions", "metadata"]]
 
-        # Step 2: Limit per source
-        chunks = limit_chunks_per_source(chunks, max_per_source=2, k=5)
+        # Step 4: Limit per source and top-k
+        chunks = limit_chunks_per_source(filtered_chunks, max_per_source=2, k=5)
 
-        # Step 3: Build prompt
+        # Step 5: Build prompt
         chat_messages = build_chat_messages(user_question, chunks)
 
         if debug:
@@ -196,7 +200,7 @@ def ask_question(request):
                 "chat_messages": chat_messages
             })
 
-        # Step 5: Call LLM
+        # Step 6: Call LLM
         try:
             llm_response = requests.post(
                 LLM_SERVER_URL,
