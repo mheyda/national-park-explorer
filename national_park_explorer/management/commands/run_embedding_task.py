@@ -134,7 +134,7 @@ class Command(BaseCommand):
                 self._embed_instance(
                     model,
                     park,
-                    "park",
+                    "park_data",
                     raw_text,
                     chunk_type=chunk_type,
                     relevance_tags=["park_info", chunk_type, f"park_uuid:{str(park.uuid)}"],
