@@ -58,9 +58,8 @@ class Command(BaseCommand):
         # === Alerts ===
         self.stdout.write("⚙️ Embedding Alerts...")
         for alert in tqdm(Alert.objects.all(), desc="Processing Alerts"):
-            # Clear existing chunks
             TextChunk.objects.filter(source_type="alert", source_uuid=alert.uuid).delete()
-            
+
             try:
                 park = Park_Data.objects.get(park_code=alert.park_code)
                 park_name = park.full_name or park.name
@@ -77,18 +76,37 @@ class Command(BaseCommand):
                 alert.url,
             ]))
 
+            chunks = chunk_text(text)
+            if not chunks:
+                continue
+
+            try:
+                embeddings = model.encode(chunks)
+            except Exception as e:
+                self.stderr.write(f"❌ Embedding failed for alert {alert.id}: {e}")
+                continue
+
             relevance_tags = ["alert_info"]
             if park_uuid:
                 relevance_tags.append(f"park_uuid:{str(park_uuid)}")
 
-            self._embed_instance(model, alert, "alert", text, "alert_info", relevance_tags)
+            with transaction.atomic():
+                for i, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
+                    TextChunk.objects.create(
+                        source_type="alert",
+                        source_uuid=alert.uuid,
+                        chunk_index=i,
+                        chunk_text=chunk,
+                        embedding=embedding.tolist(),
+                        chunk_type="alert_info",
+                        relevance_tags=relevance_tags,
+                    )
 
         # === Campgrounds ===
         self.stdout.write("⚙️ Embedding Campgrounds...")
         for cg in tqdm(Campground.objects.all(), desc="Processing Campgrounds"):
-            # Clear existing chunks
             TextChunk.objects.filter(source_type="campground", source_uuid=cg.uuid).delete()
-            
+
             try:
                 park = Park_Data.objects.get(park_code=cg.park_code)
                 park_name = park.full_name or park.name
@@ -109,22 +127,36 @@ class Command(BaseCommand):
             if park_uuid:
                 relevance_tags_base.append(f"park_uuid:{str(park_uuid)}")
 
+            chunk_index = 0
             for chunk_type, raw_text in campground_chunks.items():
-                self._embed_instance(
-                    model,
-                    cg,
-                    "campground",
-                    raw_text,
-                    chunk_type=chunk_type,
-                    relevance_tags=relevance_tags_base + [chunk_type],
-                )
+                chunks = chunk_text(raw_text)
+                if not chunks:
+                    continue
+
+                try:
+                    embeddings = model.encode(chunks)
+                except Exception as e:
+                    self.stderr.write(f"❌ Embedding failed for campground {cg.id}: {e}")
+                    continue
+
+                with transaction.atomic():
+                    for chunk in zip(chunks, embeddings):
+                        TextChunk.objects.create(
+                            source_type="campground",
+                            source_uuid=cg.uuid,
+                            chunk_index=chunk_index,
+                            chunk_text=chunk[0],
+                            embedding=chunk[1].tolist(),
+                            chunk_type=chunk_type,
+                            relevance_tags=relevance_tags_base + [chunk_type],
+                        )
+                        chunk_index += 1
 
         # === Parks ===
         self.stdout.write("⚙️ Embedding Parks...")
         for park in tqdm(Park_Data.objects.all(), desc="Processing Parks"):
-            # Clear existing chunks
             TextChunk.objects.filter(source_type="park_data", source_uuid=park.uuid).delete()
-            
+
             activity_str = ", ".join(park.activity_names or [])
             topic_str = ", ".join(park.topic_names or [])
 
@@ -139,37 +171,31 @@ class Command(BaseCommand):
                 "address": f"Address: {park.mailing_address_line1}, {park.mailing_city}, {park.mailing_state} {park.mailing_postal_code}",
             }
 
+            relevance_tags_base = ["park_info", f"park_uuid:{str(park.uuid)}"]
+
+            chunk_index = 0
             for chunk_type, raw_text in park_chunks.items():
-                self._embed_instance(
-                    model,
-                    park,
-                    "park_data",
-                    raw_text,
-                    chunk_type=chunk_type,
-                    relevance_tags=["park_info", chunk_type, f"park_uuid:{str(park.uuid)}"],
-                )
+                chunks = chunk_text(raw_text)
+                if not chunks:
+                    continue
+
+                try:
+                    embeddings = model.encode(chunks)
+                except Exception as e:
+                    self.stderr.write(f"❌ Embedding failed for park {park.id}: {e}")
+                    continue
+
+                with transaction.atomic():
+                    for chunk in zip(chunks, embeddings):
+                        TextChunk.objects.create(
+                            source_type="park_data",
+                            source_uuid=park.uuid,
+                            chunk_index=chunk_index,
+                            chunk_text=chunk[0],
+                            embedding=chunk[1].tolist(),
+                            chunk_type=chunk_type,
+                            relevance_tags=relevance_tags_base + [chunk_type],
+                        )
+                        chunk_index += 1
 
         self.stdout.write(self.style.SUCCESS("✅ Embedding complete."))
-
-    def _embed_instance(self, model, obj, source_type, text, chunk_type=None, relevance_tags=None):
-        chunks = chunk_text(text)
-        if not chunks:
-            return
-
-        try:
-            embeddings = model.encode(chunks)
-        except Exception as e:
-            self.stderr.write(f"❌ Embedding failed for {source_type} {obj.id}: {e}")
-            return
-
-        with transaction.atomic():
-            for i, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
-                TextChunk.objects.create(
-                    source_type=source_type,
-                    source_uuid=obj.uuid,
-                    chunk_index=i,
-                    chunk_text=chunk,
-                    embedding=embedding.tolist(),
-                    chunk_type=chunk_type,
-                    relevance_tags=relevance_tags or ([chunk_type] if chunk_type else []),
-                )
