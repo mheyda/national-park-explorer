@@ -58,6 +58,9 @@ class Command(BaseCommand):
         # === Alerts ===
         self.stdout.write("⚙️ Embedding Alerts...")
         for alert in tqdm(Alert.objects.all(), desc="Processing Alerts"):
+            # Clear existing chunks
+            TextChunk.objects.filter(source_type="alert", source_uuid=alert.uuid).delete()
+            
             try:
                 park = Park_Data.objects.get(park_code=alert.park_code)
                 park_name = park.full_name or park.name
@@ -83,6 +86,9 @@ class Command(BaseCommand):
         # === Campgrounds ===
         self.stdout.write("⚙️ Embedding Campgrounds...")
         for cg in tqdm(Campground.objects.all(), desc="Processing Campgrounds"):
+            # Clear existing chunks
+            TextChunk.objects.filter(source_type="campground", source_uuid=cg.uuid).delete()
+            
             try:
                 park = Park_Data.objects.get(park_code=cg.park_code)
                 park_name = park.full_name or park.name
@@ -116,6 +122,9 @@ class Command(BaseCommand):
         # === Parks ===
         self.stdout.write("⚙️ Embedding Parks...")
         for park in tqdm(Park_Data.objects.all(), desc="Processing Parks"):
+            # Clear existing chunks
+            TextChunk.objects.filter(source_type="park_data", source_uuid=park.uuid).delete()
+            
             activity_str = ", ".join(park.activity_names or [])
             topic_str = ", ".join(park.topic_names or [])
 
@@ -146,9 +155,6 @@ class Command(BaseCommand):
         chunks = chunk_text(text)
         if not chunks:
             return
-
-        # Clear existing chunks
-        TextChunk.objects.filter(source_type=source_type, source_uuid=obj.uuid).delete()
 
         try:
             embeddings = model.encode(chunks)

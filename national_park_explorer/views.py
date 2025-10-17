@@ -32,13 +32,13 @@ embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
 LLM_SERVER_URL = "http://18.223.121.77:5000/infer"  # LLM server endpoint
 MAX_QUESTION_LENGTH = 1000
 INTENT_TO_CHUNK_TYPES = {
-    "activities": ["activities", "description", "topics"],
-    "weather": ["weather"],
-    "directions": ["directions"],
-    "fees": ["fees"],
-    "contact": ["contact"],
-    "campground": ["description", "directions", "amenities", "accessibility"],
-    "general": ["description", "topics"],
+    "activities": ["activities_topics", "overview", "description", "topics"],
+    "weather": ["weather", "overview"],
+    "directions": ["directions", "overview"],
+    "fees": ["fees", "overview"],
+    "contact": ["contact", "overview"],
+    "campground": ["description", "directions", "amenities", "accessibility", "overview", "fire_policy"],
+    "general": ["overview", "description", "topics", "activities_topics"],
 }
 
 # Render home page
@@ -70,7 +70,6 @@ def rank_chunks_by_intent(chunks, intent):
     preferred_types = INTENT_TO_CHUNK_TYPES.get(intent, ["description", "topics"])
 
     def score(chunk):
-        # Lower score is better
         type_score = 0 if chunk.chunk_type in preferred_types else 1
         return (type_score, getattr(chunk, 'similarity', 1.0))
 
@@ -85,9 +84,6 @@ def get_top_chunks(query_embedding, k=20, park_code=None, intent="general"):
         if park:
             park_uuid_tag = f"park_uuid:{park.uuid}"
             queryset = queryset.filter(relevance_tags__contains=[park_uuid_tag])
-
-    preferred_chunk_types = INTENT_TO_CHUNK_TYPES.get(intent, ["description", "topics"])
-    queryset = queryset.filter(chunk_type__in=preferred_chunk_types)
 
     return (
         queryset.annotate(
