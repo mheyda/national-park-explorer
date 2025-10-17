@@ -1,5 +1,3 @@
-# national_park_explorer/management/commands/run_embedding_task.py
-
 from django.core.management.base import BaseCommand
 from sentence_transformers import SentenceTransformer
 from national_park_explorer.models import Alert, Campground, Park_Data, TextChunk
@@ -15,13 +13,12 @@ except LookupError:
     nltk.download("punkt")
 
 # Configs
-CHUNK_CHAR_LIMIT = 900  # Larger chunks!
+CHUNK_CHAR_LIMIT = 900
 USE_SENTENCE_CHUNKING = True
 
 logger = logging.getLogger(__name__)
 
 def chunk_text(text, max_chars=CHUNK_CHAR_LIMIT, use_sentence_chunking=USE_SENTENCE_CHUNKING):
-    """Chunk text into manageable sizes, optionally using sentence boundaries."""
     if not text:
         return []
 
@@ -37,10 +34,8 @@ def chunk_text(text, max_chars=CHUNK_CHAR_LIMIT, use_sentence_chunking=USE_SENTE
             chunks.append(text)
         return chunks
 
-    # Sentence-based chunking
     sentences = sent_tokenize(text)
     chunks, current_chunk = [], ""
-
     for sentence in sentences:
         if len(current_chunk) + len(sentence) + 1 <= max_chars:
             current_chunk += " " + sentence if current_chunk else sentence
@@ -63,7 +58,6 @@ class Command(BaseCommand):
         # === Alerts ===
         self.stdout.write("⚙️ Embedding Alerts...")
         for alert in tqdm(Alert.objects.all(), desc="Processing Alerts"):
-            # Get park name and UUID from Park_Data using alert.park_code
             try:
                 park = Park_Data.objects.get(park_code=alert.park_code)
                 park_name = park.full_name or park.name
@@ -79,7 +73,7 @@ class Command(BaseCommand):
                 f"Category: {alert.category}",
                 alert.url,
             ]))
-            
+
             relevance_tags = ["alert_info"]
             if park_uuid:
                 relevance_tags.append(f"park_uuid:{str(park_uuid)}")
@@ -97,22 +91,27 @@ class Command(BaseCommand):
                 park_name = "Unknown Park"
                 park_uuid = None
 
-            text = "\n".join(filter(None, [
-                f"[Campground] {cg.name}",
-                f"Park: {park_name}",
-                cg.description,
-                f"Directions: {cg.directions_overview}",
-                f"Wheelchair Access: {cg.wheelchair_access}",
-                f"RV Info: {cg.rv_info}",
-                f"Amenities: Cell = {cg.cell_phone_info}, Internet = {cg.internet_info}",
-                f"Fire Policy: {cg.fire_stove_policy}",
-            ]))
-            
-            relevance_tags = ["campground_info"]
-            if park_uuid:
-                relevance_tags.append(f"park_uuid:{str(park_uuid)}")
+            campground_chunks = {
+                "overview": f"[Campground] {cg.name}\nPark: {park_name}\n{cg.description}",
+                "directions": f"Directions: {cg.directions_overview}",
+                "accessibility": f"Wheelchair Access: {cg.wheelchair_access}\nRV Info: {cg.rv_info}",
+                "amenities": f"Amenities: Cell = {cg.cell_phone_info}, Internet = {cg.internet_info}",
+                "fire_policy": f"Fire Policy: {cg.fire_stove_policy}",
+            }
 
-            self._embed_instance(model, cg, "campground", text, "campground_info", relevance_tags)
+            relevance_tags_base = ["campground_info"]
+            if park_uuid:
+                relevance_tags_base.append(f"park_uuid:{str(park_uuid)}")
+
+            for chunk_type, raw_text in campground_chunks.items():
+                self._embed_instance(
+                    model,
+                    cg,
+                    "campground",
+                    raw_text,
+                    chunk_type=chunk_type,
+                    relevance_tags=relevance_tags_base + [chunk_type],
+                )
 
         # === Parks ===
         self.stdout.write("⚙️ Embedding Parks...")
@@ -120,19 +119,26 @@ class Command(BaseCommand):
             activity_str = ", ".join(park.activity_names or [])
             topic_str = ", ".join(park.topic_names or [])
 
-            text = "\n".join(filter(None, [
-                f"[Park] {park.full_name or park.name}",
-                park.description,
-                f"Activities: {activity_str}" if activity_str else None,
-                f"Topics: {topic_str}" if topic_str else None,
-                f"Directions: {park.directions_info}",
-                f"Weather Info: {park.weather_info}",
-                f"Entrance Fee: {park.entrance_fee_title} - {park.entrance_fee_description} (${park.entrance_fee_cost})",
-                f"Entrance Pass: {park.entrance_pass_title} - {park.entrance_pass_description} (${park.entrance_pass_cost})",
-                f"Contact: {park.phone_number} ({park.phone_type}), Email: {park.email}",
-                f"Address: {park.mailing_address_line1}, {park.mailing_city}, {park.mailing_state} {park.mailing_postal_code}",
-            ]))
-            self._embed_instance(model, park, "park", text, "park_overview")
+            park_chunks = {
+                "overview": f"[Park] {park.full_name or park.name}\n{park.description}",
+                "activities_topics": f"Activities: {activity_str}\nTopics: {topic_str}",
+                "directions": f"Directions: {park.directions_info}",
+                "weather": f"Weather Info: {park.weather_info}",
+                "fees": f"Entrance Fee: {park.entrance_fee_title} - {park.entrance_fee_description} (${park.entrance_fee_cost})",
+                "pass": f"Entrance Pass: {park.entrance_pass_title} - {park.entrance_pass_description} (${park.entrance_pass_cost})",
+                "contact": f"Contact: {park.phone_number} ({park.phone_type}), Email: {park.email}",
+                "address": f"Address: {park.mailing_address_line1}, {park.mailing_city}, {park.mailing_state} {park.mailing_postal_code}",
+            }
+
+            for chunk_type, raw_text in park_chunks.items():
+                self._embed_instance(
+                    model,
+                    park,
+                    "park",
+                    raw_text,
+                    chunk_type=chunk_type,
+                    relevance_tags=["park_info", chunk_type, f"park_uuid:{str(park.uuid)}"],
+                )
 
         self.stdout.write(self.style.SUCCESS("✅ Embedding complete."))
 
@@ -161,4 +167,3 @@ class Command(BaseCommand):
                     chunk_type=chunk_type,
                     relevance_tags=relevance_tags or ([chunk_type] if chunk_type else []),
                 )
-

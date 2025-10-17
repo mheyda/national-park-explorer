@@ -76,7 +76,7 @@ def rank_chunks_by_intent(chunks, intent):
 
     return sorted(chunks, key=score)
 
-def get_top_chunks(query_embedding, k=20, park_code=None):
+def get_top_chunks(query_embedding, k=20, park_code=None, intent="general"):
     query_embedding_str = "[" + ",".join(f"{x:.6f}" for x in query_embedding) + "]"
     queryset = TextChunk.objects.all()
 
@@ -85,6 +85,9 @@ def get_top_chunks(query_embedding, k=20, park_code=None):
         if park:
             park_uuid_tag = f"park_uuid:{park.uuid}"
             queryset = queryset.filter(relevance_tags__contains=[park_uuid_tag])
+
+    preferred_chunk_types = INTENT_TO_CHUNK_TYPES.get(intent, ["description", "topics"])
+    queryset = queryset.filter(chunk_type__in=preferred_chunk_types)
 
     return (
         queryset.annotate(
@@ -147,6 +150,7 @@ def infer_intent_from_query(query):
     else:
         return "general"
 
+
 @api_view(['POST'])
 def ask_question(request):
     user_question = request.data.get("question", "")
@@ -158,27 +162,22 @@ def ask_question(request):
 
     try:
         query_embedding = embedding_model.encode(user_question).tolist()
-        source_type = request.data.get("source_type")
 
         # Determine user intent and park
         intent = infer_intent_from_query(user_question)
         park_code = get_park_code_from_question(user_question)
 
-        # Step 1: Get top chunks scoped to the correct park
-        raw_chunks = get_top_chunks(query_embedding, k=20, park_code=park_code)
+        # Step 1: Get top chunks scoped to the correct park and intent
+        raw_chunks = get_top_chunks(query_embedding, k=20, park_code=park_code, intent=intent)
 
         # Step 2: Filter chunks by similarity (lower is better)
-        SIMILARITY_THRESHOLD = 0.35  # adjust as needed (experiment)
+        SIMILARITY_THRESHOLD = -0.6  # adjust as needed
         filtered_chunks = [c for c in raw_chunks if getattr(c, "similarity", 1.0) <= SIMILARITY_THRESHOLD]
 
-        # Step 3: Optionally filter out unwanted types based on intent
-        if intent not in ["contact", "fees", "directions"]:
-            filtered_chunks = [c for c in filtered_chunks if c.chunk_type not in ["contact", "fees", "directions", "metadata"]]
-
-        # Step 4: Limit per source and top-k
+        # Step 3: Limit per source and top-k
         chunks = limit_chunks_per_source(filtered_chunks, max_per_source=2, k=5)
 
-        # Step 5: Build prompt
+        # Step 4: Build prompt
         chat_messages = build_chat_messages(user_question, chunks)
 
         if debug:
@@ -186,6 +185,16 @@ def ask_question(request):
                 "question": user_question,
                 "intent": intent,
                 "matched_park_code": park_code,
+                "raw_chunks": [
+                    {
+                        "chunk_index": chunk.chunk_index,
+                        "chunk_type": chunk.chunk_type,
+                        "source_uuid": str(chunk.source_uuid),
+                        "similarity": getattr(chunk, "similarity", None),
+                        "text_preview": chunk.chunk_text[:200] + ("..." if len(chunk.chunk_text) > 200 else "")
+                    }
+                    for chunk in raw_chunks
+                ],
                 "retrieved_chunks": [
                     {
                         "chunk_index": chunk.chunk_index,
@@ -200,7 +209,7 @@ def ask_question(request):
                 "chat_messages": chat_messages
             })
 
-        # Step 6: Call LLM
+        # Step 5: Call LLM
         try:
             llm_response = requests.post(
                 LLM_SERVER_URL,
@@ -225,7 +234,6 @@ def ask_question(request):
     except Exception as e:
         logger.exception("Error in ask_question")
         return Response({"error": str(e)}, status=500)
-
 
 # Get weather data
 @api_view(['GET'])
