@@ -267,3 +267,16 @@ class Command(BaseCommand):
             self.stderr.write(f"⚠️ Finished with {fail_count} failure(s)")
         else:
             self.stdout.write("✅ All parks synced successfully.")
+        
+        self.warm_cache()
+        
+    def warm_cache(self):
+        try:
+            url = 'http://django-api:8000/getParks?start=0&limit=500&sort=fullName&stateCode='
+            response = requests.get(url, timeout=10)
+            if response.status_code == 200:
+                print("✅ Cache warmed successfully.")
+            else:
+                print(f"⚠️ Cache warming request failed: {response.status_code}")
+        except Exception as e:
+            print(f"⚠️ Exception during cache warming: {e}")

@@ -22,6 +22,7 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from sentence_transformers import SentenceTransformer
 from django.db.models.expressions import RawSQL
+from django.views.decorators.cache import cache_page
 from collections import defaultdict
 import os
 import logging
@@ -243,6 +244,7 @@ def getWeather(request):
 
 # Get park data
 @api_view(['GET'])
+@cache_page(60 * 60 * 24 * 30)  # 30 days
 def getParks(request):
     start = int(request.query_params.get('start', 0))
     limit = int(request.query_params.get('limit', 50))
