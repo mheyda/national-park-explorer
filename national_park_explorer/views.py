@@ -29,7 +29,8 @@ import xml.etree.ElementTree as ET
 
 logger = logging.getLogger(__name__)
 embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
-LLM_SERVER_URL = f"http://{settings.LLM_SERVER_IP}:5000/infer"  # LLM server endpoint
+LLM_SERVER_IP = os.getenv('LLM_SERVER_IP', '127.0.0.1')
+LLM_SERVER_URL = f"http://{LLM_SERVER_IP}:5000/infer" # LLM server endpoint
 MAX_QUESTION_LENGTH = 1000
 INTENT_TO_CHUNK_TYPES = {
     "activities": ["activities_topics", "overview", "description", "topics"],
