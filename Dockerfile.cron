@@ -4,7 +4,7 @@ WORKDIR /home/app/web
 
 COPY . .
 
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements-cron.txt
 
 # Add cron
 RUN apt-get update && apt-get install -y cron && \
