@@ -57,7 +57,7 @@ RUN addgroup --system app && adduser --system --group app
 RUN chown -R app:app /home/app
 
 COPY sync-cron.sh $APP_HOME/sync-cron.sh
-RUN chmod +x $APP_HOME/sync-cron.sh
+RUN chmod +x $APP_HOME/sync-cron.sh && chown app:app $APP_HOME/sync-cron.sh
 
 # Use non-root user
 USER app
