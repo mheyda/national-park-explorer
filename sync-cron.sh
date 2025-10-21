@@ -1,3 +1,5 @@
+#!/bin/sh
+
 cd /home/app/web
 while true; do
   start_time=$(date +%s)
