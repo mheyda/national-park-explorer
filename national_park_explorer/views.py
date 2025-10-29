@@ -102,7 +102,7 @@ def estimate_tokens(text):
 
 def build_chat_messages(query, chunks, max_tokens=1000):
     # Calculate output budget
-    output_token_budget = 600  # Reserve ~600 tokens for response
+    output_token_budget = 900  # Reserve ~900 tokens for response
     
     system_prompt = (
         "You are a helpful US park ranger answering questions about US National Parks, "
