@@ -168,7 +168,7 @@ def ask_question(request):
         raw_chunks = get_top_chunks(query_embedding, k=20, park_code=park_code, intent=intent)
 
         # Step 2: Filter chunks by similarity (lower is better)
-        SIMILARITY_THRESHOLD = -0.6  # adjust as needed
+        SIMILARITY_THRESHOLD = -0.6
         filtered_chunks = [c for c in raw_chunks if getattr(c, "similarity", 1.0) <= SIMILARITY_THRESHOLD]
 
         # Step 3: Limit per source and top-k
@@ -213,24 +213,29 @@ def ask_question(request):
             return Response({"error": "LLM service not configured."}, status=500)
 
         llm_ip = None
-        for _ in range(30):  # ~60 seconds total (30 polls * 2 sec)
+        max_attempts = 5  # Total polling attempts (~5*25s = ~125s)
+        poll_interval = 25
+
+        for attempt in range(max_attempts):
             try:
                 lambda_response = requests.get(
                     LAMBDA_URL,
                     headers={"Authorization": f"Bearer {settings.LLM_LAMBDA_SECRET}"},
-                    timeout=5
+                    timeout=20  # Allow Lambda to start EC2 + check health
                 )
                 lambda_data = lambda_response.json()
-                logger.error(f"Lambda response: {lambda_data}")
+                logger.info(f"Lambda response (attempt {attempt+1}): {lambda_data}")
 
                 if lambda_data.get("status") == "ready":
                     llm_ip = lambda_data.get("llm_ip")
                     break
                 else:
-                    time.sleep(2)
+                    if attempt < max_attempts - 1:
+                        time.sleep(poll_interval)
             except requests.RequestException as e:
                 logger.error(f"Error calling Lambda LLM startup endpoint: {e}")
-                time.sleep(2)
+                if attempt < max_attempts - 1:
+                    time.sleep(poll_interval)
 
         if not llm_ip:
             return Response(
