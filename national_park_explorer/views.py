@@ -30,8 +30,6 @@ import xml.etree.ElementTree as ET
 
 logger = logging.getLogger(__name__)
 embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
-LLM_SERVER_IP = os.getenv('LLM_SERVER_IP', '127.0.0.1')
-LLM_SERVER_URL = f"http://{LLM_SERVER_IP}:5000/infer" # LLM server endpoint
 MAX_QUESTION_LENGTH = 1000
 INTENT_TO_CHUNK_TYPES = {
     "activities": ["activities_topics", "overview", "description", "topics"],
@@ -206,11 +204,38 @@ def ask_question(request):
                 ],
                 "chat_messages": chat_messages
             })
+        
+        # Step 5: Check LLM server status and start if needed
+        LAMBDA_URL = os.getenv("LAMBDA_LLM_START_URL")
+        if not LAMBDA_URL:
+            logger.error("LAMBDA_LLM_START_URL not configured")
+            return Response({"error": "LLM service not configured."}, status=500)
 
-        # Step 5: Call LLM
+        try:
+            lambda_response = requests.get(
+                LAMBDA_URL,
+                headers={"Authorization": f"Bearer {settings.LLM_LAMBDA_SECRET}"},
+                timeout=120
+            )
+            lambda_data = lambda_response.json()
+            logger.debug(f"Lambda response data: {lambda_data}")
+
+            if lambda_data.get("status") != "ready":
+                message = lambda_data.get("message", "LLM server is not available.")
+                return Response({"error": message}, status=503)
+
+            llm_ip = lambda_data.get("llm_ip")
+            llm_url = f"http://{llm_ip}:5000/infer" # LLM server endpoint
+
+        except requests.RequestException as e:
+            logger.error(f"Error calling Lambda LLM startup endpoint: {e}")
+            return Response({"error": "Failed to initialize LLM server."}, status=502)
+
+        # Step 6: Call LLM
         try:
             llm_response = requests.post(
-                LLM_SERVER_URL,
+                llm_url,
+                headers={"Authorization": f"Bearer {settings.LLM_LAMBDA_SECRET}"},
                 json={"messages": chat_messages},
                 stream=True,
                 timeout=300
