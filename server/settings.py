@@ -31,6 +31,7 @@ MEDIA_ROOT = '/home/app/web/mediafiles'
 SECRET_KEY = env.str('SECRET_KEY')
 OPEN_WEATHER_API_KEY = env.str('OPEN_WEATHER_API_KEY')
 NPS_API_KEY = env.str('NPS_API_KEY')
+LLM_LAMBDA_SECRET = env.str('LLM_LAMBDA_SECRET')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
