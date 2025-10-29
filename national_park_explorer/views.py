@@ -93,24 +93,55 @@ def get_top_chunks(query_embedding, k=20, park_code=None, intent="general"):
         .order_by("similarity")[:k]
     )
 
-def build_chat_messages(query, chunks):
-    context_lines = []
+def estimate_tokens(text):
+    """
+    Rough token estimation: ~4 characters per token for English text.
+    This is a simple heuristic. For more accuracy, use tiktoken library.
+    """
+    return len(text) // 4
 
-    for i, chunk in enumerate(chunks, start=1):
-        label = f"{chunk.source_type.upper()} - {chunk.chunk_type or 'general'}"
-        content = chunk.chunk_text.strip().replace("\n", " ")
-        context_lines.append(f"{i}. [{label}]: {content}")
-
-    context = "\n".join(context_lines)
-
+def build_chat_messages(query, chunks, max_tokens=1000):
     system_prompt = (
         "You are a helpful US park ranger answering questions about US National Parks, "
         "Monuments, Historical Sites, and other sites in the National Park System. "
         "Use the numbered context information to answer the user's question clearly and accurately."
     )
-
-    user_prompt = f"Context:\n{context}\n\nQuestion:\n{query}"
-
+    
+    # Calculate tokens used by system prompt and query structure
+    question_section = f"Question:\n{query}"
+    base_tokens = estimate_tokens(system_prompt) + estimate_tokens(question_section)
+    base_tokens += 50  # Buffer for message structure overhead
+    
+    # Reserve tokens for context
+    available_tokens = max_tokens - base_tokens
+    
+    if available_tokens <= 0:
+        # Question itself is too long
+        return [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": question_section}
+        ]
+    
+    context_lines = []
+    current_tokens = 0
+    
+    for i, chunk in enumerate(chunks, start=1):
+        label = f"{chunk.source_type.upper()} - {chunk.chunk_type or 'general'}"
+        content = chunk.chunk_text.strip().replace("\n", " ")
+        line = f"{i}. [{label}]: {content}"
+        
+        line_tokens = estimate_tokens(line) + 1  # +1 for newline
+        
+        # Check if adding this chunk would exceed limit
+        if current_tokens + line_tokens > available_tokens:
+            break
+        
+        context_lines.append(line)
+        current_tokens += line_tokens
+    
+    context = "\n".join(context_lines)
+    user_prompt = f"Context:\n{context}\n\n{question_section}"
+    
     return [
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": user_prompt}
