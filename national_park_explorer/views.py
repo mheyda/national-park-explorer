@@ -147,36 +147,27 @@ def infer_intent_from_query(query):
     else:
         return "general"
 
-
 @api_view(['POST'])
 def ask_question(request):
-    user_question = request.data.get("question", "")
-    user_question = user_question[:MAX_QUESTION_LENGTH].strip()
-    debug = request.data.get("debug", False)
-
+    user_question = request.data.get("question", "").strip()[:MAX_QUESTION_LENGTH]
     if not user_question:
         return Response({"error": "Missing 'question' in request."}, status=400)
 
-    try:
-        query_embedding = embedding_model.encode(user_question).tolist()
+    debug = request.data.get("debug", False)
 
-        # Determine user intent and park
+    try:
+        # --- Step 1: Embed question, infer intent, and retrieve chunks ---
+        query_embedding = embedding_model.encode(user_question).tolist()
         intent = infer_intent_from_query(user_question)
         park_code = get_park_code_from_question(user_question)
 
-        # Step 1: Get top chunks scoped to the correct park and intent
         raw_chunks = get_top_chunks(query_embedding, k=20, park_code=park_code, intent=intent)
-
-        # Step 2: Filter chunks by similarity (lower is better)
         SIMILARITY_THRESHOLD = -0.6
         filtered_chunks = [c for c in raw_chunks if getattr(c, "similarity", 1.0) <= SIMILARITY_THRESHOLD]
-
-        # Step 3: Limit per source and top-k
         chunks = limit_chunks_per_source(filtered_chunks, max_per_source=2, k=5)
-
-        # Step 4: Build prompt
         chat_messages = build_chat_messages(user_question, chunks)
 
+        # --- Optional debug info ---
         if debug:
             return Response({
                 "question": user_question,
@@ -189,8 +180,7 @@ def ask_question(request):
                         "source_uuid": str(chunk.source_uuid),
                         "similarity": getattr(chunk, "similarity", None),
                         "text_preview": chunk.chunk_text[:200] + ("..." if len(chunk.chunk_text) > 200 else "")
-                    }
-                    for chunk in raw_chunks
+                    } for chunk in raw_chunks
                 ],
                 "retrieved_chunks": [
                     {
@@ -200,42 +190,49 @@ def ask_question(request):
                         "source_uuid": str(chunk.source_uuid),
                         "chunk_text": chunk.chunk_text[:1000] + ("..." if len(chunk.chunk_text) > 1000 else ""),
                         "similarity": getattr(chunk, "similarity", None)
-                    }
-                    for chunk in chunks
+                    } for chunk in chunks
                 ],
                 "chat_messages": chat_messages
             })
 
-        # Step 5: Check LLM server status and start if needed
+        # --- Step 2: Query Lambda for LLM server status ---
         LAMBDA_URL = os.getenv("LAMBDA_LLM_START_URL")
         if not LAMBDA_URL:
             logger.error("LAMBDA_LLM_START_URL not configured")
             return Response({"error": "LLM service not configured."}, status=500)
 
+        headers = {"Authorization": f"Bearer {settings.LLM_LAMBDA_SECRET}"}
         llm_ip = None
-        max_attempts = 5  # Total polling attempts (~5*25s = ~125s)
-        poll_interval = 25
+        poll_intervals = [5, 7, 10, 15, 20]  # exponential backoff
 
-        for attempt in range(max_attempts):
+        for attempt, interval in enumerate(poll_intervals, start=1):
             try:
-                lambda_response = requests.get(
-                    LAMBDA_URL,
-                    headers={"Authorization": f"Bearer {settings.LLM_LAMBDA_SECRET}"},
-                    timeout=20  # Allow Lambda to start EC2 + check health
-                )
+                lambda_response = requests.get(LAMBDA_URL, headers=headers, timeout=10)
                 lambda_data = lambda_response.json()
-                logger.info(f"Lambda response (attempt {attempt+1}): {lambda_data}")
+                logger.info(f"Lambda poll attempt {attempt}: {lambda_data}")
 
-                if lambda_data.get("status") == "ready":
+                status = lambda_data.get("status")
+
+                if status == "disabled":
+                    # Monthly usage limit hit
+                    return Response({
+                        "error": "LLM usage limit reached for this month.",
+                        "message": lambda_data.get("message", "")
+                    }, status=403)
+
+                if status == "ready":
                     llm_ip = lambda_data.get("llm_ip")
                     break
-                else:
-                    if attempt < max_attempts - 1:
-                        time.sleep(poll_interval)
+
+                # still "starting"
+                if attempt < len(poll_intervals):
+                    logger.info(f"LLM server starting... waiting {interval}s before retry")
+                    time.sleep(interval)
+
             except requests.RequestException as e:
-                logger.error(f"Error calling Lambda LLM startup endpoint: {e}")
-                if attempt < max_attempts - 1:
-                    time.sleep(poll_interval)
+                logger.warning(f"Error calling Lambda (attempt {attempt}): {e}")
+                if attempt < len(poll_intervals):
+                    time.sleep(interval)
 
         if not llm_ip:
             return Response(
@@ -243,16 +240,27 @@ def ask_question(request):
                 status=503
             )
 
-        llm_url = f"http://{llm_ip}:5000/infer"
+        # --- Step 3: Final health check directly against the LLM ---
+        health_url = f"http://{llm_ip}:5000/health"
+        try:
+            health_resp = requests.get(health_url, headers=headers, timeout=30)
+            health_data = health_resp.json()
+            if health_data.get("status") != "ok":
+                logger.warning("LLM health endpoint did not return ok")
+                return Response({"error": "LLM server not ready after start."}, status=503)
+        except requests.RequestException as e:
+            logger.warning(f"LLM health check failed: {e}")
+            return Response({"error": "LLM server health check failed."}, status=503)
 
-        # Step 6: Call LLM
+        # --- Step 4: Send inference request ---
+        llm_url = f"http://{llm_ip}:5000/infer"
         try:
             llm_response = requests.post(
                 llm_url,
-                headers={"Authorization": f"Bearer {settings.LLM_LAMBDA_SECRET}"},
+                headers=headers,
                 json={"messages": chat_messages},
                 stream=True,
-                timeout=300
+                timeout=300  # 5-minute inference timeout
             )
             llm_response.raise_for_status()
 
