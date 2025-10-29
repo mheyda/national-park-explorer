@@ -203,7 +203,7 @@ def ask_question(request):
 
         headers = {"Authorization": f"Bearer {settings.LLM_LAMBDA_SECRET}"}
         llm_ip = None
-        poll_intervals = [5, 7, 10, 15, 20]  # exponential backoff
+        poll_intervals = [5, 7, 10, 15, 15, 15, 15]  # exponential backoff
 
         for attempt, interval in enumerate(poll_intervals, start=1):
             try:
