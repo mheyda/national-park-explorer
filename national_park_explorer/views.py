@@ -3,6 +3,7 @@ import requests
 import json
 import gpxpy
 import geojson
+import time
 from django.utils import timezone
 from fitparse import FitFile
 from django.db import transaction
@@ -204,32 +205,40 @@ def ask_question(request):
                 ],
                 "chat_messages": chat_messages
             })
-        
+
         # Step 5: Check LLM server status and start if needed
         LAMBDA_URL = os.getenv("LAMBDA_LLM_START_URL")
         if not LAMBDA_URL:
             logger.error("LAMBDA_LLM_START_URL not configured")
             return Response({"error": "LLM service not configured."}, status=500)
 
-        try:
-            lambda_response = requests.get(
-                LAMBDA_URL,
-                headers={"Authorization": f"Bearer {settings.LLM_LAMBDA_SECRET}"},
-                timeout=120
+        llm_ip = None
+        for _ in range(30):  # ~60 seconds total (30 polls * 2 sec)
+            try:
+                lambda_response = requests.get(
+                    LAMBDA_URL,
+                    headers={"Authorization": f"Bearer {settings.LLM_LAMBDA_SECRET}"},
+                    timeout=5
+                )
+                lambda_data = lambda_response.json()
+                logger.error(f"Lambda response: {lambda_data}")
+
+                if lambda_data.get("status") == "ready":
+                    llm_ip = lambda_data.get("llm_ip")
+                    break
+                else:
+                    time.sleep(2)
+            except requests.RequestException as e:
+                logger.error(f"Error calling Lambda LLM startup endpoint: {e}")
+                time.sleep(2)
+
+        if not llm_ip:
+            return Response(
+                {"error": "LLM server is not ready yet. Try again later."},
+                status=503
             )
-            lambda_data = lambda_response.json()
-            logger.debug(f"Lambda response data: {lambda_data}")
 
-            if lambda_data.get("status") != "ready":
-                message = lambda_data.get("message", "LLM server is not available.")
-                return Response({"error": message}, status=503)
-
-            llm_ip = lambda_data.get("llm_ip")
-            llm_url = f"http://{llm_ip}:5000/infer" # LLM server endpoint
-
-        except requests.RequestException as e:
-            logger.error(f"Error calling Lambda LLM startup endpoint: {e}")
-            return Response({"error": "Failed to initialize LLM server."}, status=502)
+        llm_url = f"http://{llm_ip}:5000/infer"
 
         # Step 6: Call LLM
         try:
@@ -252,7 +261,6 @@ def ask_question(request):
         except requests.RequestException as e:
             logger.error(f"LLM server request failed: {e}")
             return Response({"error": "LLM server is unavailable."}, status=502)
-
 
     except Exception as e:
         logger.exception("Error in ask_question")
