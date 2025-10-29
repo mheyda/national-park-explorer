@@ -101,10 +101,16 @@ def estimate_tokens(text):
     return len(text) // 4
 
 def build_chat_messages(query, chunks, max_tokens=1000):
+    # Calculate output budget
+    output_token_budget = 600  # Reserve ~600 tokens for response
+    
     system_prompt = (
         "You are a helpful US park ranger answering questions about US National Parks, "
         "Monuments, Historical Sites, and other sites in the National Park System. "
-        "Use the numbered context information to answer the user's question clearly and accurately."
+        "Use the numbered context information to answer the user's question clearly and accurately. "
+        f"IMPORTANT: Keep your response under {output_token_budget} tokens (approximately 2-3 paragraphs). "
+        "For questions asking for extensive lists, provide 3-5 well-chosen examples with brief descriptions "
+        "rather than attempting to list everything."
     )
     
     # Calculate tokens used by system prompt and query structure
