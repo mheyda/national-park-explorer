@@ -307,11 +307,7 @@ def ask_question(request):
                     if chunk:
                         yield chunk
 
-            response = StreamingHttpResponse(stream_llm(), content_type="text/plain")
-            response["Access-Control-Allow-Origin"] = "https://marshallcodes.com"
-            response["Access-Control-Allow-Credentials"] = "true"
-            response["Cache-Control"] = "no-cache"
-            return response
+            return StreamingHttpResponse(stream_llm(), content_type="text/plain")
 
         except requests.RequestException as e:
             logger.error(f"LLM server request failed: {e}")
