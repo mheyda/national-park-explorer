@@ -67,6 +67,32 @@ def get_park_code_from_question(question):
             return park.park_code
     return None
 
+def filter_by_similarity_dynamic(chunks, abs_threshold=-0.67, max_delta=0.12):
+    """
+    Keep chunks that are both below an absolute similarity threshold AND
+    within `max_delta` of the best match.
+    
+    Lower similarity = more similar.
+    """
+    if not chunks:
+        return []
+
+    # Sort by similarity ascending (most similar first)
+    chunks_sorted = sorted(chunks, key=lambda c: c.similarity)
+    best_sim = chunks_sorted[0].similarity
+
+    filtered = []
+    for c in chunks_sorted:
+        if c.similarity > abs_threshold:
+            continue
+
+        # dynamic threshold: allow only chunks close to best similarity
+        if c.similarity - best_sim <= max_delta:
+            filtered.append(c)
+
+    return filtered
+
+
 def rank_chunks_by_intent(chunks, intent):
     preferred_types = INTENT_TO_CHUNK_TYPES.get(intent, ["description", "topics"])
 
@@ -102,16 +128,18 @@ def estimate_tokens(text):
 
 def build_chat_messages(query, chunks, max_tokens=1000):
     # Calculate output budget
-    output_token_budget = 900  # Reserve ~900 tokens for response
-    
+    output_token_budget = 160  # Reserve ~160 tokens for response
+    output_token_max = 400
+
     system_prompt = (
-        "You are a helpful US park ranger answering questions about US National Parks, "
-        "Monuments, Historical Sites, and other sites in the National Park System. "
-        "Use the numbered context information to answer the user's question clearly and accurately. "
-        f"IMPORTANT: Keep your response concise unless you are explicitly asked for more detail. "
-        "Also keep your response under {output_token_budget} tokens (approximately 2-3 paragraphs). "
-        "For questions asking for extensive lists, provide 3-5 well-chosen examples with brief descriptions "
-        "rather than attempting to list everything."
+        "You are a helpful general AI assistant with special knowledge of US national parks, monuments, historical sites, and other sites in the National Park System. "
+        "Use the numbered context ONLY if it clearly and directly helps answer the user's question. "
+        "If the context appears unrelated, incomplete, or irrelevant, IGNORE it completely. "
+        "Do NOT force the context into your answer. "
+        "Your priority is to answer the user's question accurately and concisely. "
+        f"IMPORTANT: Keep your response VERY short and concise unless explicitly asked for more detail. Your response should idealy be less than {output_token_budget} tokens, but definitely no more than {output_token_max} tokens. "
+        "For bulleted or numbered lists, provide 2-4 items unless specifically asked for more. "
+        "DO NOT MENTION THE CONTEXT YOU WERE PROVIDED IN YOUR RESPONSE."
     )
     
     # Calculate tokens used by system prompt and query structure
@@ -199,10 +227,15 @@ def ask_question(request):
         intent = infer_intent_from_query(user_question)
         park_code = get_park_code_from_question(user_question)
 
-        raw_chunks = get_top_chunks(query_embedding, k=20, park_code=park_code, intent=intent)
-        SIMILARITY_THRESHOLD = -0.6
-        filtered_chunks = [c for c in raw_chunks if getattr(c, "similarity", 1.0) <= SIMILARITY_THRESHOLD]
-        chunks = limit_chunks_per_source(filtered_chunks, max_per_source=2, k=5)
+        raw_chunks = get_top_chunks(query_embedding, k=20, park_code=park_code)
+
+        filtered_chunks = filter_by_similarity_dynamic(
+            raw_chunks,
+            abs_threshold=-0.67,  # TIGHTER floor you requested
+            max_delta=0.12        # only keep chunks near the top match
+        )
+        ranked_chunks = rank_chunks_by_intent(filtered_chunks, intent)
+        chunks = limit_chunks_per_source(ranked_chunks, max_per_source=2, k=5)
         chat_messages = build_chat_messages(user_question, chunks)
 
         # --- Optional debug info ---
