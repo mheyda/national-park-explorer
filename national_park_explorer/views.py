@@ -234,88 +234,87 @@ def ask_question(request):
             })
 
         # --- Step 2: Query Lambda for LLM server status ---
-        LAMBDA_URL = os.getenv("LAMBDA_LLM_START_URL")
-        if not LAMBDA_URL:
-            logger.error("LAMBDA_LLM_START_URL not configured")
-            return Response({"error": "LLM service not configured."}, status=500)
+        def json_line(obj):
+            return json.dumps(obj) + "\n"
+    
+        def stream():
+            LAMBDA_URL = os.getenv("LAMBDA_LLM_START_URL")
+            if not LAMBDA_URL:
+                logger.error("LAMBDA_LLM_START_URL not configured")
+                yield json_line({"event": "error", "type": "misconfigured"})
+                return
+            
+            headers = {"Authorization": f"Bearer {settings.LLM_LAMBDA_SECRET}"}
 
-        headers = {"Authorization": f"Bearer {settings.LLM_LAMBDA_SECRET}"}
-        llm_ip = None
-        poll_intervals = [5, 7, 10, 15, 15, 15, 15]  # exponential backoff
+            llm_ip = None
+            poll_intervals = [5, 7, 10, 15, 15, 15]
 
-        for attempt, interval in enumerate(poll_intervals, start=1):
-            try:
-                lambda_response = requests.get(LAMBDA_URL, headers=headers, timeout=10)
-                lambda_data = lambda_response.json()
-                logger.info(f"Lambda poll attempt {attempt}: {lambda_data}")
+            for attempt, interval in enumerate(poll_intervals, start=1):
+                try:
+                    lambda_response = requests.get(LAMBDA_URL, headers=headers, timeout=10)
+                    data = lambda_response.json()
+                    logger.info(f"Lambda poll attempt {attempt}: {data}")
+                except Exception as e:
+                    yield json_line({"event": "error", "type": "lambda_error", "message": str(e)})
+                    time.sleep(interval)
+                    continue
 
-                status = lambda_data.get("status")
+                status = data.get("status")
 
+                # LLM server has hit monthly limit
                 if status == "disabled":
-                    # Monthly usage limit hit
-                    return Response({
-                        "error": "LLM usage limit reached for this month.",
-                        "message": lambda_data.get("message", "")
-                    }, status=403)
+                    yield json_line({"event": "error", "type": "usage_limit"})
+                    return
 
+                # LLM server is ready
                 if status == "ready":
-                    llm_ip = lambda_data.get("llm_ip")
+                    llm_ip = data.get("llm_ip")
+                    yield json_line({"event": "ready"})
                     break
 
-                # still "starting"
-                if attempt < len(poll_intervals):
-                    logger.info(f"LLM server starting... waiting {interval}s before retry")
-                    time.sleep(interval)
+                # LLM server is starting
+                if status == "starting":
+                    yield json_line({"event": "starting", "attempt": attempt})
 
+                time.sleep(interval)
+
+            if not llm_ip:
+                yield json_line({"event": "error", "type": "llm_server_not_ready"})
+                return
+            
+            # --- Health check to make sure LLM server is good to go ---
+            health_url = f"http://{llm_ip}:5000/health"
+            try:
+                health_resp = requests.get(health_url, headers=headers, timeout=30)
+                health_data = health_resp.json()
+                if health_data.get("status") != "ok":
+                    logger.warning("LLM health endpoint did not return ok")
+                    yield json_line({"event": "error", "type": "health_check_failed"})
+                    return
             except requests.RequestException as e:
-                logger.warning(f"Error calling Lambda (attempt {attempt}): {e}")
-                if attempt < len(poll_intervals):
-                    time.sleep(interval)
+                logger.warning(f"LLM health check failed: {e}")
+                yield json_line({"event": "error", "type": "health_check_failed"})
+                return
 
-        if not llm_ip:
-            return Response(
-                {"error": "LLM server is not ready yet. Try again later."},
-                status=503
-            )
-
-        # --- Step 3: Final health check directly against the LLM ---
-        health_url = f"http://{llm_ip}:5000/health"
-        try:
-            health_resp = requests.get(health_url, headers=headers, timeout=30)
-            health_data = health_resp.json()
-            if health_data.get("status") != "ok":
-                logger.warning("LLM health endpoint did not return ok")
-                return Response({"error": "LLM server not ready after start."}, status=503)
-        except requests.RequestException as e:
-            logger.warning(f"LLM health check failed: {e}")
-            return Response({"error": "LLM server health check failed."}, status=503)
-
-        # --- Step 4: Send inference request ---
-        llm_url = f"http://{llm_ip}:5000/infer"
-        try:
+            # --- Now stream LLM tokens ---
+            llm_url = f"http://{llm_ip}:5000/infer"
             llm_response = requests.post(
                 llm_url,
                 headers=headers,
                 json={"messages": chat_messages},
                 stream=True,
-                timeout=300  # 5-minute inference timeout
+                timeout=300
             )
-            llm_response.raise_for_status()
 
-            def stream_llm():
-                for chunk in llm_response.iter_content(chunk_size=1024):
-                    if chunk:
-                        yield chunk
+            for line in llm_response.iter_lines(decode_unicode=True):
+                if line:
+                    yield line + "\n"
 
-            response = StreamingHttpResponse(stream_llm(), content_type="text/plain")
-            response["Access-Control-Allow-Origin"] = "https://npe.marshallcodes.com"
-            response["Access-Control-Allow-Credentials"] = "true"
-            response["Cache-Control"] = "no-cache"
-            return response
-
-        except requests.RequestException as e:
-            logger.error(f"LLM server request failed: {e}")
-            return Response({"error": "LLM server is unavailable."}, status=502)
+        response = StreamingHttpResponse(stream(), content_type="text/plain")
+        response["Cache-Control"] = "no-cache"
+        response["Access-Control-Allow-Origin"] = "https://npe.marshallcodes.com"
+        response["Access-Control-Allow-Credentials"] = "true"
+        return response
 
     except Exception as e:
         logger.exception("Error in ask_question")
