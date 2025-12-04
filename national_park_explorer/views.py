@@ -31,6 +31,8 @@ import xml.etree.ElementTree as ET
 
 logger = logging.getLogger(__name__)
 embedding_model = SentenceTransformer("all-MiniLM-L6-v2")
+MAX_CONTEXT_TOKENS = 4096
+EXPECTED_RESPONSE_TOKENS = 1000
 MAX_QUESTION_LENGTH = 1000
 INTENT_TO_CHUNK_TYPES = {
     "activities": ["activities_topics", "overview", "description", "topics"],
@@ -58,6 +60,7 @@ def handler500(request, exception):
 
 
 # AI Chatbot
+# Extract the park code from the user's question (if there is one)
 def get_park_code_from_question(question):
     q = question.lower()
     for park in Park_Data.objects.all():
@@ -66,6 +69,56 @@ def get_park_code_from_question(question):
         if park.name and park.name.lower() in q:
             return park.park_code
     return None
+
+# Trims the chat history received by the frontend to remain within the LLM context length limit
+def trim_history(history, max_tokens=None):
+    """
+    Keep as many recent messages as possible without exceeding max_tokens.
+    Use the same estimate_tokens() function you already have.
+    """
+
+    if not isinstance(history, list):
+        return []
+
+    if max_tokens is None:
+        max_tokens = MAX_CONTEXT_TOKENS - EXPECTED_RESPONSE_TOKENS
+        
+    trimmed = []
+    total_tokens = 0
+
+    # reverse (newest first)
+    for msg in reversed(history):
+        content = msg.get("content", "")
+        msg_tokens = estimate_tokens(content) + 4  # structure overhead
+        if total_tokens + msg_tokens > max_tokens:
+            break
+        trimmed.append(msg)
+        total_tokens += msg_tokens
+
+    # reverse back to correct order
+    return list(reversed(trimmed))
+
+def select_chunks_within_token_budget(chunks, available_tokens):
+    """
+    Select chunks dynamically so that total tokens <= available_tokens,
+    respecting per-source limits (max_per_source) and overall max chunks (k).
+    """
+    selected_chunks = []
+    current_tokens = 0
+
+    for i, chunk in enumerate(chunks, start=1):
+        content = chunk.chunk_text.strip().replace("\n", " ")
+        label = f"{chunk.source_type.upper()} - {chunk.chunk_type or 'general'}"
+        line = f"{i}. [{label}]: {content}"
+        line_tokens = estimate_tokens(line) + 1
+
+        if current_tokens + line_tokens > available_tokens:
+            break
+
+        selected_chunks.append(chunk)
+        current_tokens += line_tokens
+
+    return selected_chunks
 
 def filter_by_similarity_dynamic(chunks, abs_threshold=-0.67, max_delta=0.12):
     """
@@ -126,10 +179,13 @@ def estimate_tokens(text):
     """
     return len(text) // 4
 
-def build_chat_messages(query, chunks, max_tokens=1000):
+def build_chat_messages(query, chunks, history, max_tokens=None):
     # Calculate output budget
     output_token_budget = 160  # Reserve ~160 tokens for response
     output_token_max = 400
+
+    if max_tokens is None:
+        max_tokens = MAX_CONTEXT_TOKENS - EXPECTED_RESPONSE_TOKENS
 
     system_prompt = (
         "You are a helpful general AI assistant with special knowledge of US national parks, monuments, historical sites, and other sites in the National Park System. "
@@ -137,50 +193,37 @@ def build_chat_messages(query, chunks, max_tokens=1000):
         "If the context appears unrelated, incomplete, or irrelevant, IGNORE it completely. "
         "Do NOT force the context into your answer. "
         "Your priority is to answer the user's question accurately and concisely. "
-        f"IMPORTANT: Keep your response VERY short and concise unless explicitly asked for more detail. Your response should idealy be less than {output_token_budget} tokens, but definitely no more than {output_token_max} tokens. "
+        f"IMPORTANT: Keep your response VERY short and concise unless explicitly asked for more detail. Your response should ideally be less than {output_token_budget} tokens, but definitely no more than {output_token_max} tokens. "
         "For bulleted or numbered lists, provide 2-4 items unless specifically asked for more. "
         "DO NOT MENTION THE CONTEXT YOU WERE PROVIDED IN YOUR RESPONSE."
     )
     
     # Calculate tokens used by system prompt and query structure
     question_section = f"Question:\n{query}"
-    base_tokens = estimate_tokens(system_prompt) + estimate_tokens(question_section)
-    base_tokens += 50  # Buffer for message structure overhead
-    
-    # Reserve tokens for context
-    available_tokens = max_tokens - base_tokens
-    
-    if available_tokens <= 0:
-        # Question itself is too long
-        return [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": question_section}
-        ]
-    
+    history = trim_history(history, max_tokens=max_tokens)
+    system_tokens = estimate_tokens(system_prompt)
+    question_tokens = estimate_tokens(question_section)
+    history_tokens = sum(estimate_tokens(m["content"]) + 4 for m in history)
+
+    chunks = select_chunks_within_token_budget(
+        chunks,
+        max_tokens=max_tokens - system_tokens - question_tokens - history_tokens,
+    )
+
+    # Build context text
     context_lines = []
-    current_tokens = 0
-    
     for i, chunk in enumerate(chunks, start=1):
         label = f"{chunk.source_type.upper()} - {chunk.chunk_type or 'general'}"
         content = chunk.chunk_text.strip().replace("\n", " ")
-        line = f"{i}. [{label}]: {content}"
-        
-        line_tokens = estimate_tokens(line) + 1  # +1 for newline
-        
-        # Check if adding this chunk would exceed limit
-        if current_tokens + line_tokens > available_tokens:
-            break
-        
-        context_lines.append(line)
-        current_tokens += line_tokens
-    
+        context_lines.append(f"{i}. [{label}]: {content}")
+
     context = "\n".join(context_lines)
     user_prompt = f"Context:\n{context}\n\n{question_section}"
-    
-    return [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": user_prompt}
-    ]
+
+    messages = [{"role": "system", "content": system_prompt}]
+    messages.extend(history)
+    messages.append({"role": "user", "content": user_prompt})
+    return messages
 
 
 def limit_chunks_per_source(chunks, max_per_source=2, k=10):
@@ -216,6 +259,9 @@ def infer_intent_from_query(query):
 @api_view(['POST'])
 def ask_question(request):
     user_question = request.data.get("question", "").strip()[:MAX_QUESTION_LENGTH]
+    history = request.data.get("history", [])
+    history = history if isinstance(history, list) else []
+
     if not user_question:
         return Response({"error": "Missing 'question' in request."}, status=400)
 
@@ -236,7 +282,7 @@ def ask_question(request):
         )
         ranked_chunks = rank_chunks_by_intent(filtered_chunks, intent)
         chunks = limit_chunks_per_source(ranked_chunks, max_per_source=2, k=5)
-        chat_messages = build_chat_messages(user_question, chunks)
+        chat_messages = build_chat_messages(user_question, chunks, history)
 
         # --- Optional debug info ---
         if debug:
@@ -339,9 +385,26 @@ def ask_question(request):
                 timeout=300
             )
 
+            assistant_response = ""
+
             for line in llm_response.iter_lines(decode_unicode=True):
                 if line:
+                    # extract the text token (depends on your LLM server format)
+                    payload = json.loads(line)
+                    if payload.get("event") == "token":
+                        text = payload.get("text", "")
+                        assistant_response += text
                     yield line + "\n"
+
+            updated_history = history + [
+                {"role": "user", "content": user_question},
+                {"role": "assistant", "content": assistant_response}
+            ]
+
+            yield json.dumps({
+                "event": "history",
+                "updated_history": updated_history
+            }) + "\n"
 
         response = StreamingHttpResponse(stream(), content_type="text/plain")
         response["Cache-Control"] = "no-cache"
