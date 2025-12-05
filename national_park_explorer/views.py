@@ -70,33 +70,47 @@ def get_park_code_from_question(question):
             return park.park_code
     return None
 
-# Trims the chat history received by the frontend to remain within the LLM context length limit
-def trim_history(history, max_tokens=None):
+def prune_turns(history, max_turns=3, max_tokens=2000):
     """
-    Keep as many recent messages as possible without exceeding max_tokens.
-    Use the same estimate_tokens() function you already have.
+    Keep at most `max_turns` full conversational turns (user+assistant pairs)
+    AND enforce a maximum token budget for total history.
+    History format: [{role: "...", content: "..."}]
     """
-
     if not isinstance(history, list):
         return []
 
-    if max_tokens is None:
-        max_tokens = MAX_CONTEXT_TOKENS - EXPECTED_RESPONSE_TOKENS
-        
-    trimmed = []
+    # ---- STEP 1: Only keep complete turns (user, assistant) ----
+    # Example h: [user, assistant, user, assistant, user] -> turns = 2 full + dangling user
+    turns = []
+    buffer = []
+
+    for msg in history:
+        buffer.append(msg)
+        if msg.get("role") == "assistant":
+            turns.append(buffer)
+            buffer = []
+
+    # Keep only last N turns
+    turns = turns[-max_turns:]
+
+    # Flatten back into a list of messages
+    pruned_history = [msg for turn in turns for msg in turn]
+
+    # ---- STEP 2: Enforce the token cap (2000 tokens) ----
     total_tokens = 0
+    final_history = []
 
-    # reverse (newest first)
-    for msg in reversed(history):
-        content = msg.get("content", "")
-        msg_tokens = estimate_tokens(content) + 4  # structure overhead
-        if total_tokens + msg_tokens > max_tokens:
+    for msg in reversed(pruned_history):  # newest → oldest
+        t = estimate_tokens(msg.get("content", "")) + 4
+        if total_tokens + t > max_tokens:
             break
-        trimmed.append(msg)
-        total_tokens += msg_tokens
+        final_history.append(msg)
+        total_tokens += t
 
-    # reverse back to correct order
-    return list(reversed(trimmed))
+    # Return in correct chronological order
+    final_history.reverse()
+    return final_history
+
 
 def select_chunks_within_token_budget(chunks, available_tokens):
     """
@@ -200,7 +214,7 @@ def build_chat_messages(query, chunks, history, max_tokens=None):
     
     # Calculate tokens used by system prompt and query structure
     question_section = f"Question:\n{query}"
-    history = trim_history(history, max_tokens=max_tokens)
+    history = prune_turns(history, max_turns=3, max_tokens=2000)
     system_tokens = estimate_tokens(system_prompt)
     question_tokens = estimate_tokens(question_section)
     history_tokens = sum(estimate_tokens(m["content"]) + 4 for m in history)
