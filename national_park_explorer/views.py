@@ -207,7 +207,7 @@ def build_chat_messages(query, chunks, history, max_tokens=None):
 
     chunks = select_chunks_within_token_budget(
         chunks,
-        max_tokens=max_tokens - system_tokens - question_tokens - history_tokens,
+        available_tokens=max_tokens - system_tokens - question_tokens - history_tokens,
     )
 
     # Build context text
