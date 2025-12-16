@@ -3,7 +3,7 @@
 import uuid
 import os
 from io import BytesIO
-from PIL import Image
+from PIL import Image, ImageOps
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import FileExtensionValidator
@@ -180,6 +180,7 @@ class ParkImage(models.Model):
 
         try:
             img = Image.open(self.image_original)
+            img = ImageOps.exif_transpose(img)
             if img.mode != "RGB":
                 img = img.convert("RGB")
 
