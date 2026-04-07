@@ -430,6 +430,75 @@ def ask_question(request):
         logger.exception("Error in ask_question")
         return Response({"error": str(e)}, status=500)
 
+@api_view(['GET'])
+def github_chart_data(request):
+    selected_year = request.query_params.get('year')
+    cache_key = f'github_contributions_{selected_year or "current"}'
+    cached_data = cache.get(cache_key)
+    
+    if cached_data:
+        return Response(cached_data)
+
+    arg_string = ""
+    if selected_year and selected_year.isdigit():
+        start = f"{selected_year}-01-01T00:00:00Z"
+        end = f"{selected_year}-12-31T23:59:59Z"
+        arg_string = f'(from: "{start}", to: "{end}")'
+
+    query = f"""
+    {{
+        user(login: "mheyda") {{
+            contributionsCollection{arg_string} {{
+                contributionCalendar {{
+                    totalContributions
+                    weeks {{
+                        contributionDays {{
+                            contributionCount
+                            date
+                        }}
+                    }}
+                }}
+            }}
+        }}
+    }}
+    """
+    
+    try:
+        headers = {
+            "Authorization": f"Bearer {settings.GITHUB_TOKEN}",
+            "Content-Type": "application/json"
+        }
+        response = requests.post(
+            'https://api.github.com/graphql', 
+            json={'query': query}, 
+            headers=headers,
+            timeout=10
+        )
+        response.raise_for_status()
+        raw_data = response.json()
+
+        # Flatten the nested GraphQL structure for the frontend
+        calendar = raw_data['data']['user']['contributionsCollection']['contributionCalendar']
+        processed_days = []
+        for week in calendar['weeks']:
+            for day in week['contributionDays']:
+                processed_days.append({
+                    'date': day['date'],
+                    'count': day['contributionCount']
+                })
+
+        final_data = {
+            'total': calendar['totalContributions'],
+            'days': processed_days
+        }
+        
+        # Cache for 24 hours
+        cache.set(cache_key, final_data, 86400)
+        return Response(final_data)
+
+    except Exception as e:
+        return Response({"error": "Resource Synchronization Failed"}, status=status.HTTP_502_BAD_GATEWAY)
+
 # Get weather data
 @api_view(['GET'])
 def getWeather(request):
