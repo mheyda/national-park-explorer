@@ -93,7 +93,7 @@ SIMPLE_JWT = {
 }
 
 CORS_ALLOWED_ORIGINS = [
-    "https://maps.marshallcodes.com", "https://npe.marshallcodes.com"
+    "https://maps.marshallcodes.com", "https://npe.marshallcodes.com", "https://marshallcodes.com"
 ]
 CORS_ALLOW_CREDENTIALS = True
 
